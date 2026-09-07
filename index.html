@@ -2,22 +2,24 @@
 <html lang="ar" dir="rtl" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>تحدي الأسئلة السريعة | Speed Quiz Challenge</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تحدي الأسئلة السريعة</title>
   
-  <!-- Telegram WebApp SDK -->
+  <!-- Tailwind & Confetti & Telegram -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <!-- Canvas Confetti -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   
-  <!-- ربط ملف التصميم -->
-  <link rel="stylesheet" href="/src/style.css">
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- ضع هنا أكواد الـ CSS (style ) الخاصة بك التي كانت في ملفك الأصلي -->
 </head>
 <body class="p-3 sm:p-5 flex flex-col justify-between max-w-md mx-auto w-full min-h-screen">
 
-  <!-- ضع هنا كل أكواد HTML الخاصة بالواجهة (Header, Main, Modals ) كما هي في كودك الأصلي -->
-  
+  <!-- ضع هنا كل أكواد HTML (الواجهة، الأزرار، النوافذ المنبثقة) كما هي -->
+
   <!-- ربط ملف الجافاسكريبت الرئيسي -->
-  <script type="module" src="/src/main.js"></script>
+  <script type="module" src="./js/app.js"></script>
 </body>
 </html>
