@@ -20,7 +20,7 @@ const i18n = {
     langFlag: '🇸🇦',
     dir: 'rtl',
     cooldownReady: 'جاهز الآن',
-    cooldownWait: '⏳ متبقي وقت'
+    cooldownWait: '⏳ متبقي'
   },
   en: {
     lblBalance: 'Total Balance',
@@ -39,7 +39,7 @@ const i18n = {
     langFlag: '🇬🇧',
     dir: 'ltr',
     cooldownReady: 'Ready Now',
-    cooldownWait: '⏳ Locked'
+    cooldownWait: '⏳ Wait'
   }
 };
 
@@ -51,7 +51,7 @@ if (tg) {
   telegramUser = tg.initDataUnsafe?.user;
 }
 
-// تحديد اللغة الافتراضية (من التخزين، أو من تليجرام، أو عربي كافتراضي)
+// تحديد اللغة الافتراضية
 let currentLang = localStorage.getItem('sq_lang');
 if (!currentLang) {
   if (telegramUser && telegramUser.language_code) {
@@ -68,12 +68,11 @@ let selectedCategory = null;
 let activeQuizQuestions = [];
 let currentQuestionIndex = 0;
 let sessionScore = 0;
-let streak = 0;
 let timerInterval = null;
 let timerSecondsLeft = 5;
 const TIME_LIMIT_PER_Q = 5;
 const REWARD_PER_CORRECT = 0.001;
-const COOLDOWN_MS = 12 * 60 * 60 * 1000; // تم التعديل إلى 12 ساعة
+const COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 ساعة
 
 /* نظام الصوت Web Audio API */
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -127,7 +126,6 @@ function applyLanguage() {
   
   renderCategoriesGrid();
 
-  // تحديث السؤال الحالي فوراً إذا كان المستخدم داخل شاشة الأسئلة
   if (!document.getElementById('screen-quiz').classList.contains('hidden')) {
     renderCurrentQuestionUI();
   }
@@ -135,7 +133,7 @@ function applyLanguage() {
 
 async function initApp() {
   initializeDatabase();
-  applyLanguage(); // تطبيق اللغة عند البدء
+  applyLanguage(); 
   
   if (telegramUser) {
     const userData = await getUserData(telegramUser.id);
@@ -148,6 +146,13 @@ async function initApp() {
     categoryCooldowns = JSON.parse(localStorage.getItem('sq_cooldowns') || '{}');
   }
   updateBalanceUI();
+
+  // تحديث عداد الوقت للأقسام المغلقة كل ثانية
+  setInterval(() => {
+    if (!document.getElementById('screen-categories').classList.contains('hidden')) {
+      renderCategoriesGrid();
+    }
+  }, 1000);
 }
 
 function updateBalanceUI() {
@@ -163,7 +168,17 @@ function renderCategoriesGrid() {
     const card = document.createElement('div');
     card.className = `glass-card rounded-2xl p-3.5 flex flex-col justify-between border ${isCooldown ? 'border-amber-500/30 opacity-80' : 'border-slate-800 cursor-pointer hover:border-sky-500/50'}`;
     
-    let statusText = isCooldown ? i18n[currentLang].cooldownWait : i18n[currentLang].cooldownReady;
+    let statusText = '';
+    if (isCooldown) {
+      const diffSec = Math.ceil((cooldownEndTime - Date.now()) / 1000);
+      const hours = Math.floor(diffSec / 3600);
+      const mins = Math.floor((diffSec % 3600) / 60);
+      const secs = diffSec % 60;
+      const timeStr = `${hours}:${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+      statusText = `${i18n[currentLang].cooldownWait} ${timeStr}`;
+    } else {
+      statusText = i18n[currentLang].cooldownReady;
+    }
     
     card.innerHTML = `
       <div>
@@ -171,7 +186,7 @@ function renderCategoriesGrid() {
           <span class="text-3xl">${cat.icon}</span>
         </div>
         <h3 class="font-bold text-sm text-white">${cat.name[currentLang]}</h3>
-        <span class="text-[10px] text-emerald-400 mt-2 block">${statusText}</span>
+        <span class="text-[10px] text-emerald-400 mt-2 block font-mono">${statusText}</span>
       </div>
     `;
     card.onclick = () => {
@@ -187,7 +202,6 @@ function startCategoryQuiz(catId) {
   const rawPoolAr = questionPools[catId]['ar'];
   const rawPoolEn = questionPools[catId]['en'];
   
-  // جلب 20 سؤال عشوائي وتخزين النسختين العربية والإنجليزية معاً
   let indices = Array.from({length: rawPoolAr.length}, (_, i) => i);
   indices = indices.sort(() => 0.5 - Math.random()).slice(0, 20);
   
@@ -207,7 +221,7 @@ function startCategoryQuiz(catId) {
     };
   });
 
-  currentQuestionIndex = 0; sessionScore = 0; streak = 0;
+  currentQuestionIndex = 0; sessionScore = 0;
   document.getElementById('screen-categories').classList.add('hidden');
   document.getElementById('screen-quiz').classList.remove('hidden');
   loadNextQuestion();
@@ -219,7 +233,6 @@ function loadNextQuestion() {
   resetTimer();
 }
 
-// دالة منفصلة لعرض السؤال لكي نتمكن من تحديثه عند تغيير اللغة
 function renderCurrentQuestionUI() {
   if (currentQuestionIndex >= activeQuizQuestions.length) return;
   
@@ -229,7 +242,11 @@ function renderCurrentQuestionUI() {
   
   document.getElementById('question-cat-tag').innerHTML = `${catMeta.icon} ${catMeta.name[currentLang]}`;
   document.getElementById('q-counter').innerText = `${currentQuestionIndex + 1} / ${activeQuizQuestions.length}`;
-  document.getElementById('streak-counter').innerText = currentLang === 'ar' ? `الاستمرار: ${streak}` : `Streak: ${streak}`;
+  
+  // تحديث عداد الإجابات الصحيحة بدلاً من الاستمرار
+  const correctCounter = document.getElementById('correct-counter');
+  if(correctCounter) correctCounter.innerText = sessionScore;
+  
   document.getElementById('score-counter').innerText = `$${(sessionScore * REWARD_PER_CORRECT).toFixed(3)}`;
   document.getElementById('question-text').innerText = qLang.q;
 
@@ -268,7 +285,7 @@ function resetTimer() {
     if (timerSecondsLeft <= 0) {
       clearInterval(timerInterval);
       playSound('wrong');
-      streak = 0; currentQuestionIndex++; loadNextQuestion();
+      currentQuestionIndex++; loadNextQuestion();
     }
   }, 100);
 }
@@ -280,9 +297,12 @@ function selectAnswer(idx, btn) {
   buttons.forEach(b => b.style.pointerEvents = 'none');
 
   if (idx === q.ansIndex) {
-    btn.classList.add('correct'); playSound('correct'); sessionScore++; streak++;
+    btn.classList.add('correct'); playSound('correct'); sessionScore++;
+    // تحديث عداد الإجابات الصحيحة فوراً
+    const correctCounter = document.getElementById('correct-counter');
+    if(correctCounter) correctCounter.innerText = sessionScore;
   } else {
-    btn.classList.add('wrong'); buttons[q.ansIndex].classList.add('correct'); playSound('wrong'); streak = 0;
+    btn.classList.add('wrong'); buttons[q.ansIndex].classList.add('correct'); playSound('wrong');
   }
   setTimeout(() => { currentQuestionIndex++; loadNextQuestion(); }, 700);
 }
