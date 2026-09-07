@@ -1,7 +1,64 @@
 import { categoriesMetaData, questionPools, initializeDatabase } from './data.js';
 import { supabase, getUserData, updateUserData } from './supabase.js';
 
-let currentLang = 'ar';
+// قاموس الترجمة للواجهة
+const i18n = {
+  ar: {
+    lblBalance: 'الرصيد الكلي',
+    catBadge: '⚡ مربح وسريع جداً',
+    catTitle: 'اختر القسم وابدأ التحدي',
+    catSubtitle: '20 سؤالاً سريعاً. احصل على <span class="text-emerald-400 font-bold">$0.001</span> عن كل إجابة صحيحة!',
+    lblResScore: 'الإجابات الصحيحة',
+    lblResEarned: 'أرباح الجولة',
+    btnClaim: 'سحب الأرباح لحسابك',
+    btnBack: 'العودة للأقسام',
+    adTitle: 'إعلان مكافأة تليجرام',
+    lblAdWait: 'يرجى الانتظار...',
+    btnClaimAdNow: 'إضافة الأرباح الآن 💰',
+    langName: 'العربية',
+    langFlag: '🇸🇦',
+    dir: 'rtl',
+    cooldownReady: 'جاهز الآن',
+    cooldownWait: '⏳ متبقي وقت'
+  },
+  en: {
+    lblBalance: 'Total Balance',
+    catBadge: '⚡ Fast & Rewarding',
+    catTitle: 'Choose Category & Play',
+    catSubtitle: '20 rapid questions. Earn <span class="text-emerald-400 font-bold">$0.001</span> for each correct answer!',
+    lblResScore: 'Correct Answers',
+    lblResEarned: 'Session Earned',
+    btnClaim: 'Claim Earnings',
+    btnBack: 'Back to Categories',
+    adTitle: 'Telegram Rewarded Ad',
+    lblAdWait: 'Please wait...',
+    btnClaimAdNow: 'Claim Earnings Now 💰',
+    langName: 'English',
+    langFlag: '🇬🇧',
+    dir: 'ltr',
+    cooldownReady: 'Ready Now',
+    cooldownWait: '⏳ Locked'
+  }
+};
+
+const tg = window.Telegram?.WebApp;
+let telegramUser = null;
+if (tg) {
+  tg.ready();
+  tg.expand();
+  telegramUser = tg.initDataUnsafe?.user;
+}
+
+// تحديد اللغة الافتراضية (من التخزين، أو من تليجرام، أو عربي كافتراضي)
+let currentLang = localStorage.getItem('sq_lang');
+if (!currentLang) {
+  if (telegramUser && telegramUser.language_code) {
+    currentLang = telegramUser.language_code.startsWith('en') ? 'en' : 'ar';
+  } else {
+    currentLang = 'ar';
+  }
+}
+
 let soundEnabled = true;
 let totalBalance = 0;
 let categoryCooldowns = {};
@@ -15,14 +72,6 @@ let timerSecondsLeft = 5;
 const TIME_LIMIT_PER_Q = 5;
 const REWARD_PER_CORRECT = 0.001;
 const COOLDOWN_MS = 2 * 60 * 60 * 1000;
-
-const tg = window.Telegram?.WebApp;
-let telegramUser = null;
-if (tg) {
-  tg.ready();
-  tg.expand();
-  telegramUser = tg.initDataUnsafe?.user;
-}
 
 /* نظام الصوت Web Audio API */
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -53,8 +102,31 @@ function playSound(type) {
   } catch (e) { console.error(e); }
 }
 
+// تطبيق اللغة على الواجهة
+function applyLanguage() {
+  document.documentElement.dir = i18n[currentLang].dir;
+  document.documentElement.lang = currentLang;
+  
+  document.getElementById('lang-flag').innerText = i18n[currentLang].langFlag;
+  document.getElementById('lang-code').innerText = i18n[currentLang].langName;
+  
+  document.getElementById('lbl-balance').innerText = i18n[currentLang].lblBalance;
+  document.getElementById('cat-badge').innerText = i18n[currentLang].catBadge;
+  document.getElementById('cat-title').innerText = i18n[currentLang].catTitle;
+  document.getElementById('cat-subtitle').innerHTML = i18n[currentLang].catSubtitle;
+  document.getElementById('lbl-res-score').innerText = i18n[currentLang].lblResScore;
+  document.getElementById('lbl-res-earned').innerText = i18n[currentLang].lblResEarned;
+  document.getElementById('btn-claim-text').innerText = i18n[currentLang].btnClaim;
+  document.getElementById('btn-back-text').innerText = i18n[currentLang].btnBack;
+  document.getElementById('ad-title').innerText = i18n[currentLang].adTitle;
+  
+  renderCategoriesGrid();
+}
+
 async function initApp() {
   initializeDatabase();
+  applyLanguage(); // تطبيق اللغة عند البدء
+  
   if (telegramUser) {
     const userData = await getUserData(telegramUser.id);
     if (userData) {
@@ -66,7 +138,6 @@ async function initApp() {
     categoryCooldowns = JSON.parse(localStorage.getItem('sq_cooldowns') || '{}');
   }
   updateBalanceUI();
-  renderCategoriesGrid();
 }
 
 function updateBalanceUI() {
@@ -82,7 +153,7 @@ function renderCategoriesGrid() {
     const card = document.createElement('div');
     card.className = `glass-card rounded-2xl p-3.5 flex flex-col justify-between border ${isCooldown ? 'border-amber-500/30 opacity-80' : 'border-slate-800 cursor-pointer hover:border-sky-500/50'}`;
     
-    let statusText = isCooldown ? '⏳ متبقي وقت' : 'جاهز الآن';
+    let statusText = isCooldown ? i18n[currentLang].cooldownWait : i18n[currentLang].cooldownReady;
     
     card.innerHTML = `
       <div>
@@ -94,7 +165,7 @@ function renderCategoriesGrid() {
       </div>
     `;
     card.onclick = () => {
-      if (isCooldown) { playSound('wrong'); return showToast('هذا القسم في فترة الانتظار!', '⏳'); }
+      if (isCooldown) { playSound('wrong'); return showToast(currentLang === 'ar' ? 'هذا القسم في فترة الانتظار!' : 'Category is on cooldown!', '⏳'); }
       startCategoryQuiz(cat.id);
     };
     grid.appendChild(card);
@@ -128,7 +199,6 @@ function loadNextQuestion() {
   document.getElementById('score-counter').innerText = `$${(sessionScore * REWARD_PER_CORRECT).toFixed(3)}`;
   document.getElementById('question-text').innerText = q.q;
 
-  // نظام الأعلام
   const flagContainer = document.getElementById('flag-container');
   const flagImg = document.getElementById('flag-img');
   if (q.flagCode) {
@@ -140,12 +210,13 @@ function loadNextQuestion() {
 
   const optionsContainer = document.getElementById('options-container');
   optionsContainer.innerHTML = '';
-  const prefixes = ['أ', 'ب', 'جـ', 'د'];
+  const prefixes = currentLang === 'ar' ? ['أ', 'ب', 'جـ', 'د'] : ['A', 'B', 'C', 'D'];
   
   q.options.forEach((optText, idx) => {
     const btn = document.createElement('button');
-    btn.className = 'opt-btn glass-btn w-full p-3.5 rounded-xl font-bold text-sm text-slate-100 flex items-center justify-between border border-slate-700/80 shadow-md active:scale-98 mb-2';
-    btn.innerHTML = `<span class="text-right">${optText}</span><span class="w-6 h-6 rounded-lg bg-slate-800 text-sky-400 text-xs flex items-center justify-center font-black border border-slate-700">${prefixes[idx] || (idx+1)}</span>`;
+    const alignClass = currentLang === 'ar' ? 'text-right' : 'text-left flex-row-reverse';
+    btn.className = `opt-btn glass-btn w-full p-3.5 rounded-xl font-bold text-sm text-slate-100 flex items-center justify-between border border-slate-700/80 shadow-md active:scale-98 mb-2 ${alignClass}`;
+    btn.innerHTML = `<span>${optText}</span><span class="w-6 h-6 rounded-lg bg-slate-800 text-sky-400 text-xs flex items-center justify-center font-black border border-slate-700">${prefixes[idx] || (idx+1)}</span>`;
     btn.onclick = () => selectAnswer(idx, btn);
     optionsContainer.appendChild(btn);
   });
@@ -201,14 +272,21 @@ function finishGame() {
 window.toggleSound = () => { 
   soundEnabled = !soundEnabled; 
   document.getElementById('sound-icon').innerText = soundEnabled ? '🔊' : '🔇';
-  showToast(soundEnabled ? 'تم تشغيل الصوت' : 'تم إيقاف الصوت', '🔊');
+  showToast(soundEnabled ? (currentLang === 'ar' ? 'تم تشغيل الصوت' : 'Sound Enabled') : (currentLang === 'ar' ? 'تم إيقاف الصوت' : 'Sound Disabled'), '🔊');
 };
-window.toggleLanguage = () => { currentLang = currentLang === 'ar' ? 'en' : 'ar'; renderCategoriesGrid(); };
+
+window.toggleLanguage = () => { 
+  currentLang = currentLang === 'ar' ? 'en' : 'ar'; 
+  localStorage.setItem('sq_lang', currentLang); // حفظ اللغة في المتصفح
+  applyLanguage(); 
+};
+
 window.backToCategories = () => {
   document.getElementById('result-screen').classList.add('hidden');
   document.getElementById('screen-categories').classList.remove('hidden');
   renderCategoriesGrid();
 };
+
 window.openAdModal = () => {
   document.getElementById('ad-modal').classList.remove('hidden');
   let elapsed = 0;
@@ -216,6 +294,10 @@ window.openAdModal = () => {
   const timerText = document.getElementById('ad-timer-text');
   const btnComplete = document.getElementById('btn-complete-ad');
   
+  document.getElementById('lbl-ad-wait').innerText = i18n[currentLang].lblAdWait;
+  btnComplete.disabled = true;
+  btnComplete.className = "w-full py-3 bg-slate-800 text-slate-500 font-bold text-xs rounded-xl border border-slate-700 cursor-not-allowed";
+
   const adInt = setInterval(() => {
     elapsed += 0.1;
     timerText.innerText = `${Math.max(0, 5 - elapsed).toFixed(0)}s`;
@@ -224,10 +306,11 @@ window.openAdModal = () => {
       clearInterval(adInt);
       btnComplete.disabled = false;
       btnComplete.className = "btn-shimmer w-full py-3 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 active:scale-98 transition-all cursor-pointer";
-      document.getElementById('lbl-ad-wait').innerText = "إضافة الأرباح الآن 💰";
+      document.getElementById('lbl-ad-wait').innerText = i18n[currentLang].btnClaimAdNow;
     }
   }, 100);
 };
+
 window.finishRewardClaim = async () => {
   document.getElementById('ad-modal').classList.add('hidden');
   totalBalance += (sessionScore * REWARD_PER_CORRECT);
@@ -240,7 +323,7 @@ window.finishRewardClaim = async () => {
   }
   
   updateBalanceUI();
-  showToast(`تمت إضافة الأرباح بنجاح!`, '🎉');
+  showToast(currentLang === 'ar' ? `تمت إضافة الأرباح بنجاح!` : `Earnings claimed successfully!`, '🎉');
   window.backToCategories();
 };
 
