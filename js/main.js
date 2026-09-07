@@ -24,9 +24,37 @@ if (tg) {
   telegramUser = tg.initDataUnsafe?.user;
 }
 
+/* نظام الصوت Web Audio API */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(type) {
+  if (!soundEnabled) return;
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+    if (type === 'correct') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.2);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+      osc.start(now); osc.stop(now + 0.25);
+    } else if (type === 'wrong') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(220, now);
+      osc.frequency.linearRampToValueAtTime(110, now + 0.3);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+      osc.start(now); osc.stop(now + 0.3);
+    }
+  } catch (e) { console.error(e); }
+}
+
 async function initApp() {
   initializeDatabase();
-  
   if (telegramUser) {
     const userData = await getUserData(telegramUser.id);
     if (userData) {
@@ -34,11 +62,9 @@ async function initApp() {
       categoryCooldowns = userData.cooldowns || {};
     }
   } else {
-    // Fallback for testing outside Telegram
     totalBalance = parseFloat(localStorage.getItem('sq_balance') || '0');
     categoryCooldowns = JSON.parse(localStorage.getItem('sq_cooldowns') || '{}');
   }
-  
   updateBalanceUI();
   renderCategoriesGrid();
 }
@@ -50,12 +76,13 @@ function updateBalanceUI() {
 function renderCategoriesGrid() {
   const grid = document.getElementById('categories-grid');
   grid.innerHTML = '';
-
   categoriesMetaData.forEach(cat => {
     const cooldownEndTime = categoryCooldowns[cat.id] || 0;
     const isCooldown = Date.now() < cooldownEndTime;
     const card = document.createElement('div');
-    card.className = `glass-card rounded-2xl p-3.5 flex flex-col justify-between border ${isCooldown ? 'border-amber-500/30 opacity-80' : 'border-slate-800 cursor-pointer'}`;
+    card.className = `glass-card rounded-2xl p-3.5 flex flex-col justify-between border ${isCooldown ? 'border-amber-500/30 opacity-80' : 'border-slate-800 cursor-pointer hover:border-sky-500/50'}`;
+    
+    let statusText = isCooldown ? '⏳ متبقي وقت' : 'جاهز الآن';
     
     card.innerHTML = `
       <div>
@@ -63,11 +90,11 @@ function renderCategoriesGrid() {
           <span class="text-3xl">${cat.icon}</span>
         </div>
         <h3 class="font-bold text-sm text-white">${cat.name[currentLang]}</h3>
+        <span class="text-[10px] text-emerald-400 mt-2 block">${statusText}</span>
       </div>
     `;
-
     card.onclick = () => {
-      if (isCooldown) return showToast('هذا القسم في فترة الانتظار!', '⏳');
+      if (isCooldown) { playSound('wrong'); return showToast('هذا القسم في فترة الانتظار!', '⏳'); }
       startCategoryQuiz(cat.id);
     };
     grid.appendChild(card);
@@ -77,7 +104,6 @@ function renderCategoriesGrid() {
 function startCategoryQuiz(catId) {
   selectedCategory = catId;
   const rawPool = questionPools[catId][currentLang];
-  if(!rawPool || rawPool.length === 0) return showToast('لا توجد أسئلة هنا بعد', '⚠️');
   
   activeQuizQuestions = [...rawPool].sort(() => 0.5 - Math.random()).slice(0, 20).map(qObj => {
     const allOpts = [qObj.ans, ...qObj.alt].sort(() => 0.5 - Math.random());
@@ -94,16 +120,32 @@ function loadNextQuestion() {
   if (currentQuestionIndex >= activeQuizQuestions.length) return finishGame();
   
   const q = activeQuizQuestions[currentQuestionIndex];
+  const catMeta = categoriesMetaData.find(c => c.id === selectedCategory);
+  
+  document.getElementById('question-cat-tag').innerHTML = `${catMeta.icon} ${catMeta.name[currentLang]}`;
   document.getElementById('q-counter').innerText = `${currentQuestionIndex + 1} / ${activeQuizQuestions.length}`;
+  document.getElementById('streak-counter').innerText = `Streak: ${streak}`;
   document.getElementById('score-counter').innerText = `$${(sessionScore * REWARD_PER_CORRECT).toFixed(3)}`;
   document.getElementById('question-text').innerText = q.q;
 
+  // نظام الأعلام
+  const flagContainer = document.getElementById('flag-container');
+  const flagImg = document.getElementById('flag-img');
+  if (q.flagCode) {
+    flagContainer.classList.remove('hidden');
+    flagImg.src = `https://flagcdn.com/w320/${q.flagCode.toLowerCase( )}.png`;
+  } else {
+    flagContainer.classList.add('hidden');
+  }
+
   const optionsContainer = document.getElementById('options-container');
   optionsContainer.innerHTML = '';
+  const prefixes = ['أ', 'ب', 'جـ', 'د'];
+  
   q.options.forEach((optText, idx) => {
     const btn = document.createElement('button');
-    btn.className = 'opt-btn glass-btn w-full p-3.5 rounded-xl font-bold text-sm text-slate-100 text-right mb-2';
-    btn.innerText = optText;
+    btn.className = 'opt-btn glass-btn w-full p-3.5 rounded-xl font-bold text-sm text-slate-100 flex items-center justify-between border border-slate-700/80 shadow-md active:scale-98 mb-2';
+    btn.innerHTML = `<span class="text-right">${optText}</span><span class="w-6 h-6 rounded-lg bg-slate-800 text-sky-400 text-xs flex items-center justify-center font-black border border-slate-700">${prefixes[idx] || (idx+1)}</span>`;
     btn.onclick = () => selectAnswer(idx, btn);
     optionsContainer.appendChild(btn);
   });
@@ -113,11 +155,15 @@ function loadNextQuestion() {
 function resetTimer() {
   clearInterval(timerInterval);
   timerSecondsLeft = TIME_LIMIT_PER_Q;
+  const timerBar = document.getElementById('timer-bar');
+  timerBar.style.width = '100%';
+  
   timerInterval = setInterval(() => {
     timerSecondsLeft -= 0.1;
-    document.getElementById('timer-bar').style.width = `${(timerSecondsLeft / TIME_LIMIT_PER_Q) * 100}%`;
+    timerBar.style.width = `${Math.max(0, (timerSecondsLeft / TIME_LIMIT_PER_Q) * 100)}%`;
     if (timerSecondsLeft <= 0) {
       clearInterval(timerInterval);
+      playSound('wrong');
       streak = 0; currentQuestionIndex++; loadNextQuestion();
     }
   }, 100);
@@ -126,10 +172,13 @@ function resetTimer() {
 function selectAnswer(idx, btn) {
   clearInterval(timerInterval);
   const q = activeQuizQuestions[currentQuestionIndex];
+  const buttons = document.querySelectorAll('.opt-btn');
+  buttons.forEach(b => b.style.pointerEvents = 'none');
+
   if (idx === q.ansIndex) {
-    btn.classList.add('correct'); sessionScore++; streak++;
+    btn.classList.add('correct'); playSound('correct'); sessionScore++; streak++;
   } else {
-    btn.classList.add('wrong'); streak = 0;
+    btn.classList.add('wrong'); buttons[q.ansIndex].classList.add('correct'); playSound('wrong'); streak = 0;
   }
   setTimeout(() => { currentQuestionIndex++; loadNextQuestion(); }, 700);
 }
@@ -142,10 +191,18 @@ function finishGame() {
   document.getElementById('result-screen').classList.remove('hidden');
   document.getElementById('res-correct-count').innerText = `${sessionScore} / 20`;
   document.getElementById('res-earned-amount').innerText = `$${(sessionScore * REWARD_PER_CORRECT).toFixed(3)}`;
+  
+  if (sessionScore >= 15 && window.confetti) {
+    window.confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+  }
 }
 
 // جعل الدوال متاحة لملف HTML
-window.toggleSound = () => { soundEnabled = !soundEnabled; };
+window.toggleSound = () => { 
+  soundEnabled = !soundEnabled; 
+  document.getElementById('sound-icon').innerText = soundEnabled ? '🔊' : '🔇';
+  showToast(soundEnabled ? 'تم تشغيل الصوت' : 'تم إيقاف الصوت', '🔊');
+};
 window.toggleLanguage = () => { currentLang = currentLang === 'ar' ? 'en' : 'ar'; renderCategoriesGrid(); };
 window.backToCategories = () => {
   document.getElementById('result-screen').classList.add('hidden');
@@ -154,10 +211,22 @@ window.backToCategories = () => {
 };
 window.openAdModal = () => {
   document.getElementById('ad-modal').classList.remove('hidden');
-  setTimeout(() => {
-    document.getElementById('btn-complete-ad').disabled = false;
-    document.getElementById('lbl-ad-wait').innerText = "إضافة الأرباح الآن 💰";
-  }, 5000);
+  let elapsed = 0;
+  const progressBar = document.getElementById('ad-progress-bar');
+  const timerText = document.getElementById('ad-timer-text');
+  const btnComplete = document.getElementById('btn-complete-ad');
+  
+  const adInt = setInterval(() => {
+    elapsed += 0.1;
+    timerText.innerText = `${Math.max(0, 5 - elapsed).toFixed(0)}s`;
+    progressBar.style.width = `${(elapsed / 5) * 100}%`;
+    if (elapsed >= 5) {
+      clearInterval(adInt);
+      btnComplete.disabled = false;
+      btnComplete.className = "btn-shimmer w-full py-3 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 active:scale-98 transition-all cursor-pointer";
+      document.getElementById('lbl-ad-wait').innerText = "إضافة الأرباح الآن 💰";
+    }
+  }, 100);
 };
 window.finishRewardClaim = async () => {
   document.getElementById('ad-modal').classList.add('hidden');
@@ -171,12 +240,14 @@ window.finishRewardClaim = async () => {
   }
   
   updateBalanceUI();
+  showToast(`تمت إضافة الأرباح بنجاح!`, '🎉');
   window.backToCategories();
 };
 
 function showToast(msg, icon) {
   const toast = document.getElementById('toast');
   document.getElementById('toast-msg').innerText = msg;
+  document.getElementById('toast-icon').innerText = icon;
   toast.classList.remove('hidden');
   setTimeout(() => toast.classList.add('hidden'), 3000);
 }
