@@ -87,6 +87,11 @@
     <!-- SCREEN 2: QUIZ -->
     <div id="screen-quiz" class="hidden flex flex-col">
       <div class="flex justify-between items-center mb-3 text-xs font-bold px-1">
+        <!-- زر الخروج -->
+        <button onclick="window.exitQuiz()" class="bg-red-500/20 text-red-400 px-3 py-1.5 rounded-xl border border-red-500/30 flex items-center gap-1 hover:bg-red-500/30 transition-colors active:scale-95">
+          🚪 <span id="lbl-exit">خروج</span>
+        </button>
+        
         <div class="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 text-slate-300">📋 <span id="q-counter">1 / 20</span></div>
         <div class="bg-amber-500/10 border border-amber-500/30 text-amber-400 px-3 py-1.5 rounded-xl animate-pulse">🔥 <span id="streak-counter">Streak: 0</span></div>
         <div class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded-xl">⭐ <span id="score-counter">$0.000</span></div>
