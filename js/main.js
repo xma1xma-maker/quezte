@@ -15,6 +15,7 @@ const i18n = {
     adTitle: 'إعلان مكافأة تليجرام',
     lblAdWait: 'يرجى الانتظار...',
     btnClaimAdNow: 'إضافة الأرباح الآن 💰',
+    lblExit: 'خروج',
     langName: 'العربية',
     langFlag: '🇸🇦',
     dir: 'rtl',
@@ -33,6 +34,7 @@ const i18n = {
     adTitle: 'Telegram Rewarded Ad',
     lblAdWait: 'Please wait...',
     btnClaimAdNow: 'Claim Earnings Now 💰',
+    lblExit: 'Exit',
     langName: 'English',
     langFlag: '🇬🇧',
     dir: 'ltr',
@@ -71,7 +73,7 @@ let timerInterval = null;
 let timerSecondsLeft = 5;
 const TIME_LIMIT_PER_Q = 5;
 const REWARD_PER_CORRECT = 0.001;
-const COOLDOWN_MS = 2 * 60 * 60 * 1000;
+const COOLDOWN_MS = 12 * 60 * 60 * 1000; // تم التعديل إلى 12 ساعة
 
 /* نظام الصوت Web Audio API */
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -120,7 +122,15 @@ function applyLanguage() {
   document.getElementById('btn-back-text').innerText = i18n[currentLang].btnBack;
   document.getElementById('ad-title').innerText = i18n[currentLang].adTitle;
   
+  const lblExit = document.getElementById('lbl-exit');
+  if(lblExit) lblExit.innerText = i18n[currentLang].lblExit;
+  
   renderCategoriesGrid();
+
+  // تحديث السؤال الحالي فوراً إذا كان المستخدم داخل شاشة الأسئلة
+  if (!document.getElementById('screen-quiz').classList.contains('hidden')) {
+    renderCurrentQuestionUI();
+  }
 }
 
 async function initApp() {
@@ -174,11 +184,27 @@ function renderCategoriesGrid() {
 
 function startCategoryQuiz(catId) {
   selectedCategory = catId;
-  const rawPool = questionPools[catId][currentLang];
+  const rawPoolAr = questionPools[catId]['ar'];
+  const rawPoolEn = questionPools[catId]['en'];
   
-  activeQuizQuestions = [...rawPool].sort(() => 0.5 - Math.random()).slice(0, 20).map(qObj => {
-    const allOpts = [qObj.ans, ...qObj.alt].sort(() => 0.5 - Math.random());
-    return { ...qObj, options: allOpts, ansIndex: allOpts.indexOf(qObj.ans) };
+  // جلب 20 سؤال عشوائي وتخزين النسختين العربية والإنجليزية معاً
+  let indices = Array.from({length: rawPoolAr.length}, (_, i) => i);
+  indices = indices.sort(() => 0.5 - Math.random()).slice(0, 20);
+  
+  activeQuizQuestions = indices.map(idx => {
+    const qAr = rawPoolAr[idx];
+    const qEn = rawPoolEn[idx];
+    const optOrder = [0, 1, 2, 3].sort(() => 0.5 - Math.random());
+    
+    const optsAr = optOrder.map(i => i === 0 ? qAr.ans : qAr.alt[i - 1]);
+    const optsEn = optOrder.map(i => i === 0 ? qEn.ans : qEn.alt[i - 1]);
+    
+    return {
+      ar: { q: qAr.q, options: optsAr },
+      en: { q: qEn.q, options: optsEn },
+      ansIndex: optOrder.indexOf(0),
+      flagCode: qAr.flagCode
+    };
   });
 
   currentQuestionIndex = 0; sessionScore = 0; streak = 0;
@@ -189,21 +215,29 @@ function startCategoryQuiz(catId) {
 
 function loadNextQuestion() {
   if (currentQuestionIndex >= activeQuizQuestions.length) return finishGame();
+  renderCurrentQuestionUI();
+  resetTimer();
+}
+
+// دالة منفصلة لعرض السؤال لكي نتمكن من تحديثه عند تغيير اللغة
+function renderCurrentQuestionUI() {
+  if (currentQuestionIndex >= activeQuizQuestions.length) return;
   
-  const q = activeQuizQuestions[currentQuestionIndex];
+  const qData = activeQuizQuestions[currentQuestionIndex];
+  const qLang = qData[currentLang];
   const catMeta = categoriesMetaData.find(c => c.id === selectedCategory);
   
   document.getElementById('question-cat-tag').innerHTML = `${catMeta.icon} ${catMeta.name[currentLang]}`;
   document.getElementById('q-counter').innerText = `${currentQuestionIndex + 1} / ${activeQuizQuestions.length}`;
-  document.getElementById('streak-counter').innerText = `Streak: ${streak}`;
+  document.getElementById('streak-counter').innerText = currentLang === 'ar' ? `الاستمرار: ${streak}` : `Streak: ${streak}`;
   document.getElementById('score-counter').innerText = `$${(sessionScore * REWARD_PER_CORRECT).toFixed(3)}`;
-  document.getElementById('question-text').innerText = q.q;
+  document.getElementById('question-text').innerText = qLang.q;
 
   const flagContainer = document.getElementById('flag-container');
   const flagImg = document.getElementById('flag-img');
-  if (q.flagCode) {
+  if (qData.flagCode) {
     flagContainer.classList.remove('hidden');
-    flagImg.src = `https://flagcdn.com/w320/${q.flagCode.toLowerCase( )}.png`;
+    flagImg.src = `https://flagcdn.com/w320/${qData.flagCode.toLowerCase( )}.png`;
   } else {
     flagContainer.classList.add('hidden');
   }
@@ -212,7 +246,7 @@ function loadNextQuestion() {
   optionsContainer.innerHTML = '';
   const prefixes = currentLang === 'ar' ? ['أ', 'ب', 'جـ', 'د'] : ['A', 'B', 'C', 'D'];
   
-  q.options.forEach((optText, idx) => {
+  qLang.options.forEach((optText, idx) => {
     const btn = document.createElement('button');
     const alignClass = currentLang === 'ar' ? 'text-right' : 'text-left flex-row-reverse';
     btn.className = `opt-btn glass-btn w-full p-3.5 rounded-xl font-bold text-sm text-slate-100 flex items-center justify-between border border-slate-700/80 shadow-md active:scale-98 mb-2 ${alignClass}`;
@@ -220,7 +254,6 @@ function loadNextQuestion() {
     btn.onclick = () => selectAnswer(idx, btn);
     optionsContainer.appendChild(btn);
   });
-  resetTimer();
 }
 
 function resetTimer() {
@@ -283,6 +316,14 @@ window.toggleLanguage = () => {
 
 window.backToCategories = () => {
   document.getElementById('result-screen').classList.add('hidden');
+  document.getElementById('screen-categories').classList.remove('hidden');
+  renderCategoriesGrid();
+};
+
+// دالة الخروج من الأسئلة
+window.exitQuiz = () => {
+  clearInterval(timerInterval);
+  document.getElementById('screen-quiz').classList.add('hidden');
   document.getElementById('screen-categories').classList.remove('hidden');
   renderCategoriesGrid();
 };
