@@ -92,9 +92,20 @@
           🚪 <span id="lbl-exit">خروج</span>
         </button>
         
-        <div class="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 text-slate-300">📋 <span id="q-counter">1 / 20</span></div>
-        <div class="bg-amber-500/10 border border-amber-500/30 text-amber-400 px-3 py-1.5 rounded-xl animate-pulse">🔥 <span id="streak-counter">Streak: 0</span></div>
-        <div class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded-xl">⭐ <span id="score-counter">$0.000</span></div>
+        <!-- رقم السؤال -->
+        <div class="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 text-slate-300 flex items-center gap-1">
+          <span>📋</span> <span id="q-counter">1 / 20</span>
+        </div>
+
+        <!-- الإجابات الصحيحة -->
+        <div class="bg-sky-500/10 border border-sky-500/30 text-sky-400 px-3 py-1.5 rounded-xl flex items-center gap-1">
+          <span>✅</span> <span id="correct-counter">0</span>
+        </div>
+
+        <!-- الأرباح -->
+        <div class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded-xl flex items-center gap-1">
+          <span>⭐</span> <span id="score-counter">$0.000</span>
+        </div>
       </div>
       <div class="w-full bg-slate-800/80 rounded-full h-2.5 mb-4 p-0.5 border border-slate-700/50">
         <div id="timer-bar" class="bg-gradient-to-r from-sky-400 to-amber-400 h-full rounded-full w-full transition-all duration-100 ease-linear"></div>
