@@ -1,5 +1,12 @@
 import { categoriesMetaData, questionPools, initializeDatabase } from './data.js';
-import { supabase, getUserData, updateUserData } from './supabase.js';
+import { supabase, checkAndRegisterUser, updateUserData } from './supabase.js';
+
+// ⚠️ إعدادات البوت والسحب (قم بتغييرها ببياناتك الحقيقية)
+const BOT_USERNAME = 'Speed_QuizBot'; // معرف البوت الخاص بك بدون @
+const ADMIN_USERNAME = 'YOUR_USERNAME'; // معرف حسابك الشخصي على تليجرام بدون @ للتواصل
+const MIN_WITHDRAW = 50; // الحد الأدنى للسحب (دولار)
+const MIN_INVITES = 20; // الحد الأدنى للدعوات لطلب السحب
+const VIP_INVITES = 50; // الدعوات المطلوبة لظهور حسابك الشخصي
 
 // قاموس الترجمة للواجهة
 const i18n = {
@@ -18,6 +25,8 @@ const i18n = {
     lblExit: 'خروج',
     lblCorrect: 'الصحيحة',
     lblChannel: 'قناة إثباتات السحب',
+    btnInvite: 'دعوة الأصدقاء 🎁',
+    btnWithdraw: 'سحب الأرباح 💳',
     langName: 'العربية',
     langFlag: '🇸🇦',
     dir: 'rtl',
@@ -39,6 +48,8 @@ const i18n = {
     lblExit: 'Exit',
     lblCorrect: 'Correct',
     lblChannel: 'Withdrawal Proofs',
+    btnInvite: 'Invite Friends 🎁',
+    btnWithdraw: 'Withdraw 💳',
     langName: 'English',
     langFlag: '🇬🇧',
     dir: 'ltr',
@@ -49,10 +60,13 @@ const i18n = {
 
 const tg = window.Telegram?.WebApp;
 let telegramUser = null;
+let startParam = null; // كود الإحالة (ID الشخص الذي دعاه)
+
 if (tg) {
   tg.ready();
   tg.expand();
   telegramUser = tg.initDataUnsafe?.user;
+  startParam = tg.initDataUnsafe?.start_param;
 }
 
 // تحديد اللغة الافتراضية
@@ -67,6 +81,7 @@ if (!currentLang) {
 
 let soundEnabled = true;
 let totalBalance = 0;
+let referralsCount = 0; // عدد الدعوات
 let categoryCooldowns = {};
 let selectedCategory = null;
 let activeQuizQuestions = [];
@@ -132,11 +147,10 @@ function applyLanguage() {
   document.getElementById('btn-back-text').innerText = i18n[currentLang].btnBack;
   document.getElementById('ad-title').innerText = i18n[currentLang].adTitle;
   
-  const lblExit = document.getElementById('lbl-exit');
-  if(lblExit) lblExit.innerText = i18n[currentLang].lblExit;
-
-  const lblChannel = document.getElementById('lbl-channel');
-  if(lblChannel) lblChannel.innerText = i18n[currentLang].lblChannel;
+  if(document.getElementById('lbl-exit')) document.getElementById('lbl-exit').innerText = i18n[currentLang].lblExit;
+  if(document.getElementById('lbl-channel')) document.getElementById('lbl-channel').innerText = i18n[currentLang].lblChannel;
+  if(document.getElementById('lbl-invite')) document.getElementById('lbl-invite').innerText = i18n[currentLang].btnInvite;
+  if(document.getElementById('lbl-withdraw')) document.getElementById('lbl-withdraw').innerText = i18n[currentLang].btnWithdraw;
   
   renderCategoriesGrid();
 
@@ -150,10 +164,12 @@ async function initApp() {
   applyLanguage(); 
   
   if (telegramUser) {
-    const userData = await getUserData(telegramUser.id);
+    // استخدام الدالة الجديدة لتسجيل المستخدم وفحص الإحالة
+    const userData = await checkAndRegisterUser(telegramUser.id, startParam);
     if (userData) {
       totalBalance = userData.balance || 0;
       categoryCooldowns = userData.cooldowns || {};
+      referralsCount = userData.referrals_count || 0;
     }
   } else {
     totalBalance = parseFloat(localStorage.getItem('sq_balance') || '0');
@@ -181,7 +197,6 @@ function renderCategoriesGrid() {
     const isCooldown = Date.now() < cooldownEndTime;
     const card = document.createElement('div');
     
-    // تغيير لون البطاقة إذا كانت في فترة الانتظار
     card.className = `glass-card rounded-2xl p-3.5 flex flex-col justify-between border ${isCooldown ? 'border-amber-500/30 opacity-70' : 'border-slate-800 cursor-pointer hover:border-sky-500/50'}`;
     
     let statusText = '';
@@ -245,7 +260,6 @@ function startCategoryQuiz(catId) {
   currentQuestionIndex = 0; 
   sessionScore = 0;
   
-  // تصفير عداد الإجابات الصحيحة في الواجهة عند بدء قسم جديد
   const correctCounter = document.getElementById('correct-counter');
   if(correctCounter) correctCounter.innerText = '0';
 
@@ -323,17 +337,16 @@ function selectAnswer(idx, btn) {
   if (idx === q.ansIndex) {
     btn.classList.add('correct'); 
     playSound('correct'); 
-    triggerHaptic('light'); // اهتزاز خفيف للإجابة الصحيحة
+    triggerHaptic('light'); 
     sessionScore++;
     
-    // تحديث عداد الإجابات الصحيحة فوراً
     const correctCounter = document.getElementById('correct-counter');
     if(correctCounter) correctCounter.innerText = sessionScore;
   } else {
     btn.classList.add('wrong'); 
     buttons[q.ansIndex].classList.add('correct'); 
     playSound('wrong'); 
-    triggerHaptic('heavy'); // اهتزاز قوي للإجابة الخاطئة
+    triggerHaptic('heavy'); 
   }
   
   setTimeout(() => { currentQuestionIndex++; loadNextQuestion(); }, 700);
@@ -354,7 +367,8 @@ function finishGame() {
   }
 }
 
-// جعل الدوال متاحة لملف HTML
+// --- دوال الأزرار والنوافذ ---
+
 window.toggleSound = () => { 
   soundEnabled = !soundEnabled; 
   document.getElementById('sound-icon').innerText = soundEnabled ? '🔊' : '🔇';
@@ -363,7 +377,7 @@ window.toggleSound = () => {
 
 window.toggleLanguage = () => { 
   currentLang = currentLang === 'ar' ? 'en' : 'ar'; 
-  localStorage.setItem('sq_lang', currentLang); // حفظ اللغة في المتصفح
+  localStorage.setItem('sq_lang', currentLang);
   applyLanguage(); 
 };
 
@@ -373,7 +387,6 @@ window.backToCategories = () => {
   renderCategoriesGrid();
 };
 
-// دالة الخروج من الأسئلة
 window.exitQuiz = () => {
   clearInterval(timerInterval);
   document.getElementById('screen-quiz').classList.add('hidden');
@@ -422,13 +435,86 @@ window.finishRewardClaim = async () => {
   window.backToCategories();
 };
 
-// دالة فتح قناة الإثباتات
 window.openChannel = () => {
   const channelUrl = 'https://t.me/+0giQaGJfCQ0xMzcy';
   if (tg && tg.openTelegramLink ) {
     tg.openTelegramLink(channelUrl);
   } else {
     window.open(channelUrl, '_blank');
+  }
+};
+
+// دالة دعوة الأصدقاء (رابط الإحالة)
+window.openInvite = () => {
+  if (!telegramUser) return showToast(currentLang === 'ar' ? 'متاح داخل تليجرام فقط' : 'Available in Telegram only', '⚠️');
+
+  const inviteLink = `https://t.me/${BOT_USERNAME}/app?startapp=${telegramUser.id}`;
+  
+  // أزلنا الرابط من النص لأن تليجرام سيضيفه تلقائياً في الأسفل
+  const text = currentLang === 'ar' 
+    ? `العب واربح المال الحقيقي معي في تحدي الأسئلة! 💰` 
+    : `Play and earn real money with me! 💰`;
+
+  // دمج الرابط والنص بشكل صحيح
+  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent(text)}`;
+
+  if (tg && tg.openTelegramLink) {
+    tg.openTelegramLink(shareUrl);
+  } else {
+    window.open(shareUrl, '_blank');
+  }
+};
+
+
+// دالة سحب الأرباح (التحقق من الشروط)
+window.openWithdraw = () => {
+  // 1. التحقق من الرصيد
+  if (totalBalance < MIN_WITHDRAW) {
+    triggerHaptic('error');
+    return showToast(
+      currentLang === 'ar' 
+        ? `الحد الأدنى للسحب هو $${MIN_WITHDRAW}. رصيدك الحالي $${totalBalance.toFixed(3)}` 
+        : `Minimum withdrawal is $${MIN_WITHDRAW}. Your balance is $${totalBalance.toFixed(3)}`, 
+      '⚠️'
+    );
+  }
+
+  // 2. التحقق من عدد الدعوات (الحد الأدنى 20)
+  if (referralsCount < MIN_INVITES) {
+    triggerHaptic('warning');
+    return showToast(
+      currentLang === 'ar' 
+        ? `تحتاج إلى دعوة ${MIN_INVITES} صديق للسحب. لقد دعوت ${referralsCount} حتى الآن.` 
+        : `You need ${MIN_INVITES} invites to withdraw. You have ${referralsCount}.`, 
+      '👥'
+    );
+  }
+
+  // 3. التحقق من الوصول لـ 50 دعوة لظهور حساب الأدمن
+  if (referralsCount >= VIP_INVITES) {
+    triggerHaptic('success');
+    showToast(
+      currentLang === 'ar' ? 'تم استيفاء الشروط! سيتم تحويلك للإدارة للسحب.' : 'Conditions met! Redirecting to admin.', 
+      '✅'
+    );
+    
+    setTimeout(() => {
+      const adminUrl = `https://t.me/${ADMIN_USERNAME}`;
+      if (tg && tg.openTelegramLink ) {
+        tg.openTelegramLink(adminUrl);
+      } else {
+        window.open(adminUrl, '_blank');
+      }
+    }, 2000);
+  } else {
+    // أكمل 20 دعوة لكن لم يصل لـ 50
+    triggerHaptic('warning');
+    showToast(
+      currentLang === 'ar' 
+        ? `أحسنت! لفتح التواصل المباشر للسحب، تحتاج إلى ${VIP_INVITES} دعوة (لديك ${referralsCount}).` 
+        : `Great! To unlock direct admin contact, you need ${VIP_INVITES} invites (you have ${referralsCount}).`, 
+      '🔒'
+    );
   }
 };
 
