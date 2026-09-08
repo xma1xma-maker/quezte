@@ -33,6 +33,12 @@ const i18n = {
     lblInvBal: 'رصيدك الحالي',
     btnShareText: 'مشاركة الرابط 🚀',
     btnInvBack: 'العودة للأقسام',
+    wdTitle: 'سحب الأرباح',
+    wdDesc: 'تأكد من استيفاء الشروط لسحب أرباحك مباشرة.',
+    lblWdBalReq: `الرصيد المطلوب ($${MIN_WITHDRAW})`,
+    lblWdInvReq: `الدعوات المطلوبة (${MIN_INVITES})`,
+    btnReqWithdraw: 'طلب السحب الآن',
+    btnWdBack: 'العودة للأقسام',
     langName: 'العربية',
     langFlag: '🇸🇦',
     dir: 'rtl',
@@ -62,6 +68,12 @@ const i18n = {
     lblInvBal: 'Current Balance',
     btnShareText: 'Share Link 🚀',
     btnInvBack: 'Back to Categories',
+    wdTitle: 'Withdraw Earnings',
+    wdDesc: 'Ensure you meet the conditions to withdraw directly.',
+    lblWdBalReq: `Required Balance ($${MIN_WITHDRAW})`,
+    lblWdInvReq: `Required Invites (${MIN_INVITES})`,
+    btnReqWithdraw: 'Request Withdrawal Now',
+    btnWdBack: 'Back to Categories',
     langName: 'English',
     langFlag: '🇬🇧',
     dir: 'ltr',
@@ -72,7 +84,7 @@ const i18n = {
 
 const tg = window.Telegram?.WebApp;
 let telegramUser = null;
-let startParam = null; // كود الإحالة (ID الشخص الذي دعاه)
+let startParam = null;
 
 if (tg) {
   tg.ready();
@@ -81,7 +93,6 @@ if (tg) {
   startParam = tg.initDataUnsafe?.start_param;
 }
 
-// تحديد اللغة الافتراضية
 let currentLang = localStorage.getItem('sq_lang');
 if (!currentLang) {
   if (telegramUser && telegramUser.language_code) {
@@ -93,7 +104,7 @@ if (!currentLang) {
 
 let soundEnabled = true;
 let totalBalance = 0;
-let referralsCount = 0; // عدد الدعوات
+let referralsCount = 0;
 let categoryCooldowns = {};
 let selectedCategory = null;
 let activeQuizQuestions = [];
@@ -103,16 +114,14 @@ let timerInterval = null;
 let timerSecondsLeft = 5;
 const TIME_LIMIT_PER_Q = 5;
 const REWARD_PER_CORRECT = 0.001;
-const COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 ساعة
+const COOLDOWN_MS = 12 * 60 * 60 * 1000;
 
-/* نظام الاهتزاز لتليجرام */
 function triggerHaptic(style) {
   if (tg && tg.HapticFeedback) {
     tg.HapticFeedback.impactOccurred(style);
   }
 }
 
-/* نظام الصوت Web Audio API */
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playSound(type) {
   if (!soundEnabled) return;
@@ -141,7 +150,6 @@ function playSound(type) {
   } catch (e) { console.error(e); }
 }
 
-// تطبيق اللغة على الواجهة
 function applyLanguage() {
   document.documentElement.dir = i18n[currentLang].dir;
   document.documentElement.lang = currentLang;
@@ -164,13 +172,19 @@ function applyLanguage() {
   if(document.getElementById('lbl-invite')) document.getElementById('lbl-invite').innerText = i18n[currentLang].btnInvite;
   if(document.getElementById('lbl-withdraw')) document.getElementById('lbl-withdraw').innerText = i18n[currentLang].btnWithdraw;
   
-  // نصوص صفحة الدعوة
   if(document.getElementById('inv-title')) document.getElementById('inv-title').innerText = i18n[currentLang].invTitle;
   if(document.getElementById('inv-desc')) document.getElementById('inv-desc').innerText = i18n[currentLang].invDesc;
   if(document.getElementById('lbl-inv-count')) document.getElementById('lbl-inv-count').innerText = i18n[currentLang].lblInvCount;
   if(document.getElementById('lbl-inv-bal')) document.getElementById('lbl-inv-bal').innerText = i18n[currentLang].lblInvBal;
   if(document.getElementById('btn-share-text')) document.getElementById('btn-share-text').innerText = i18n[currentLang].btnShareText;
   if(document.getElementById('btn-inv-back')) document.getElementById('btn-inv-back').innerText = i18n[currentLang].btnInvBack;
+
+  if(document.getElementById('wd-title')) document.getElementById('wd-title').innerText = i18n[currentLang].wdTitle;
+  if(document.getElementById('wd-desc')) document.getElementById('wd-desc').innerText = i18n[currentLang].wdDesc;
+  if(document.getElementById('lbl-wd-bal-req')) document.getElementById('lbl-wd-bal-req').innerText = i18n[currentLang].lblWdBalReq;
+  if(document.getElementById('lbl-wd-inv-req')) document.getElementById('lbl-wd-inv-req').innerText = i18n[currentLang].lblWdInvReq;
+  if(document.getElementById('btn-req-withdraw')) document.getElementById('btn-req-withdraw').innerText = i18n[currentLang].btnReqWithdraw;
+  if(document.getElementById('btn-wd-back')) document.getElementById('btn-wd-back').innerText = i18n[currentLang].btnWdBack;
 
   renderCategoriesGrid();
 
@@ -184,7 +198,6 @@ async function initApp() {
   applyLanguage(); 
   
   if (telegramUser) {
-    // استخدام الدالة الجديدة لتسجيل المستخدم وفحص الإحالة
     const userData = await checkAndRegisterUser(telegramUser.id, startParam);
     if (userData) {
       totalBalance = userData.balance || 0;
@@ -197,7 +210,6 @@ async function initApp() {
   }
   updateBalanceUI();
 
-  // تحديث عداد الوقت للأقسام المغلقة كل ثانية
   setInterval(() => {
     if (!document.getElementById('screen-categories').classList.contains('hidden')) {
       renderCategoriesGrid();
@@ -460,26 +472,24 @@ window.finishRewardClaim = async () => {
 
 window.openChannel = () => {
   const channelUrl = 'https://t.me/+0giQaGJfCQ0xMzcy';
-  if (tg && tg.openTelegramLink  ) {
+  if (tg && tg.openTelegramLink ) {
     tg.openTelegramLink(channelUrl);
   } else {
     window.open(channelUrl, '_blank');
   }
 };
 
-// --- دوال صفحة الدعوة (الجديدة) ---
+// --- دوال صفحة الدعوة ---
 
 window.openInviteScreen = () => {
   if (!telegramUser) return showToast(currentLang === 'ar' ? 'متاح داخل تليجرام فقط' : 'Available in Telegram only', '⚠️');
 
-  const inviteLink = `https://t.me/${BOT_USERNAME}/app?startapp=${telegramUser.id}`;
-  
-  // تحديث البيانات في الشاشة
+  const inviteLink = `https://t.me/${BOT_USERNAME}/apps?startapp=${telegramUser.id}`;
+
   document.getElementById('inv-link-input' ).value = inviteLink;
   document.getElementById('inv-count-val').innerText = referralsCount;
   document.getElementById('inv-bal-val').innerText = `$${totalBalance.toFixed(3)}`;
 
-  // إخفاء الأقسام وإظهار صفحة الدعوة
   document.getElementById('screen-categories').classList.add('hidden');
   document.getElementById('screen-invite').classList.remove('hidden');
 };
@@ -514,38 +524,45 @@ window.shareInviteLink = () => {
   }
 };
 
-// --- دالة سحب الأرباح (التحقق من الشروط) ---
+// --- دوال صفحة السحب (الجديدة) ---
 
-window.openWithdraw = () => {
-  // 1. التحقق من الرصيد
+window.openWithdrawScreen = () => {
+  // حساب النسب المئوية
+  const balPercent = Math.min(100, (totalBalance / MIN_WITHDRAW) * 100);
+  const invPercent = Math.min(100, (referralsCount / MIN_INVITES) * 100);
+  
+  // تحديث الواجهة
+  document.getElementById('wd-bal-progress').innerText = `${balPercent.toFixed(0)}%`;
+  document.getElementById('wd-bal-bar').style.width = `${balPercent}%`;
+  
+  document.getElementById('wd-inv-progress').innerText = `${invPercent.toFixed(0)}%`;
+  document.getElementById('wd-inv-bar').style.width = `${invPercent}%`;
+
+  // إظهار الشاشة
+  document.getElementById('screen-categories').classList.add('hidden');
+  document.getElementById('screen-withdraw').classList.remove('hidden');
+};
+
+window.closeWithdrawScreen = () => {
+  document.getElementById('screen-withdraw').classList.add('hidden');
+  document.getElementById('screen-categories').classList.remove('hidden');
+};
+
+window.processWithdrawal = () => {
   if (totalBalance < MIN_WITHDRAW) {
     triggerHaptic('error');
-    return showToast(
-      currentLang === 'ar' 
-        ? `الحد الأدنى للسحب هو $${MIN_WITHDRAW}. رصيدك الحالي $${totalBalance.toFixed(3)}` 
-        : `Minimum withdrawal is $${MIN_WITHDRAW}. Your balance is $${totalBalance.toFixed(3)}`, 
-      '⚠️'
-    );
+    return showToast(currentLang === 'ar' ? `تحتاج إلى $${MIN_WITHDRAW} للسحب.` : `Need $${MIN_WITHDRAW} to withdraw.`, '⚠️');
   }
 
-  // 2. التحقق من عدد الدعوات (الحد الأدنى 20)
   if (referralsCount < MIN_INVITES) {
     triggerHaptic('warning');
-    return showToast(
-      currentLang === 'ar' 
-        ? `تحتاج إلى دعوة ${MIN_INVITES} صديق للسحب. لقد دعوت ${referralsCount} حتى الآن.` 
-        : `You need ${MIN_INVITES} invites to withdraw. You have ${referralsCount}.`, 
-      '👥'
-    );
+    return showToast(currentLang === 'ar' ? `تحتاج إلى ${MIN_INVITES} دعوة للسحب.` : `Need ${MIN_INVITES} invites.`, '👥');
   }
-  // 3. التحقق من الوصول لـ 50 دعوة لظهور حساب الأدمن
+
   if (referralsCount >= VIP_INVITES) {
     triggerHaptic('success');
-    showToast(
-      currentLang === 'ar' ? 'تم استيفاء الشروط! سيتم تحويلك للإدارة للسحب.' : 'Conditions met! Redirecting to admin.', 
-      '✅'
-    );
-
+    showToast(currentLang === 'ar' ? 'تم استيفاء الشروط! تحويل للإدارة...' : 'Conditions met! Redirecting...', '✅');
+    
     setTimeout(() => {
       const adminUrl = `https://t.me/${ADMIN_USERNAME}`;
       if (tg && tg.openTelegramLink ) {
@@ -555,14 +572,8 @@ window.openWithdraw = () => {
       }
     }, 2000);
   } else {
-    // أكمل 20 دعوة لكن لم يصل لـ 50
     triggerHaptic('warning');
-    showToast(
-      currentLang === 'ar' 
-        ? `أحسنت! لفتح التواصل المباشر للسحب، تحتاج إلى ${VIP_INVITES} دعوة (لديك ${referralsCount}).` 
-        : `Great! To unlock direct admin contact, you need ${VIP_INVITES} invites (you have ${referralsCount}).`, 
-      '🔒'
-    );
+    showToast(currentLang === 'ar' ? `تحتاج ${VIP_INVITES} دعوة للتواصل المباشر.` : `Need ${VIP_INVITES} invites for direct contact.`, '🔒');
   }
 };
 
