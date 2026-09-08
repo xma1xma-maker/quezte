@@ -17,6 +17,7 @@ const i18n = {
     btnClaimAdNow: 'إضافة الأرباح الآن 💰',
     lblExit: 'خروج',
     lblCorrect: 'الصحيحة',
+    lblChannel: 'قناة إثباتات السحب',
     langName: 'العربية',
     langFlag: '🇸🇦',
     dir: 'rtl',
@@ -37,6 +38,7 @@ const i18n = {
     btnClaimAdNow: 'Claim Earnings Now 💰',
     lblExit: 'Exit',
     lblCorrect: 'Correct',
+    lblChannel: 'Withdrawal Proofs',
     langName: 'English',
     langFlag: '🇬🇧',
     dir: 'ltr',
@@ -132,6 +134,9 @@ function applyLanguage() {
   
   const lblExit = document.getElementById('lbl-exit');
   if(lblExit) lblExit.innerText = i18n[currentLang].lblExit;
+
+  const lblChannel = document.getElementById('lbl-channel');
+  if(lblChannel) lblChannel.innerText = i18n[currentLang].lblChannel;
   
   renderCategoriesGrid();
 
@@ -415,6 +420,16 @@ window.finishRewardClaim = async () => {
   updateBalanceUI();
   showToast(currentLang === 'ar' ? `تمت إضافة الأرباح بنجاح!` : `Earnings claimed successfully!`, '🎉');
   window.backToCategories();
+};
+
+// دالة فتح قناة الإثباتات
+window.openChannel = () => {
+  const channelUrl = 'https://t.me/+0giQaGJfCQ0xMzcy';
+  if (tg && tg.openTelegramLink ) {
+    tg.openTelegramLink(channelUrl);
+  } else {
+    window.open(channelUrl, '_blank');
+  }
 };
 
 function showToast(msg, icon) {
