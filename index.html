@@ -83,8 +83,21 @@
       </div>
       
       <!-- Categories Grid Container -->
-      <div id="categories-grid" class="grid grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1"></div>
+      <div id="categories-grid" class="grid grid-cols-2 gap-3 max-h-[45vh] overflow-y-auto pr-1"></div>
       
+      <!-- أزرار التحكم (الدعوة، السحب، القناة) -->
+      <div class="grid grid-cols-2 gap-2 mt-1">
+        <!-- زر دعوة الأصدقاء -->
+        <button onclick="window.openInvite()" class="w-full glass-btn py-3 rounded-xl text-amber-400 font-bold text-sm flex items-center justify-center gap-2 border border-amber-500/30 hover:bg-amber-500/10 transition-all active:scale-95">
+          <span id="lbl-invite">دعوة الأصدقاء 🎁</span>
+        </button>
+        
+        <!-- زر سحب الأرباح -->
+        <button onclick="window.openWithdraw()" class="w-full glass-btn py-3 rounded-xl text-emerald-400 font-bold text-sm flex items-center justify-center gap-2 border border-emerald-500/30 hover:bg-emerald-500/10 transition-all active:scale-95">
+          <span id="lbl-withdraw">سحب الأرباح 💳</span>
+        </button>
+      </div>
+
       <!-- زر قناة الإثباتات -->
       <button onclick="window.openChannel()" class="mt-1 w-full glass-btn py-3 rounded-xl text-sky-400 font-bold text-sm flex items-center justify-center gap-2 border border-sky-500/30 hover:bg-sky-500/10 transition-all active:scale-95">
         <span>📢</span>
