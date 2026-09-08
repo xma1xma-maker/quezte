@@ -27,6 +27,12 @@ const i18n = {
     lblChannel: 'قناة إثباتات السحب',
     btnInvite: 'دعوة الأصدقاء 🎁',
     btnWithdraw: 'سحب الأرباح 💳',
+    invTitle: 'دعوة الأصدقاء',
+    invDesc: 'قم بدعوة أصدقائك لزيادة أرباحك وفتح ميزة السحب المباشر!',
+    lblInvCount: 'عدد الدعوات',
+    lblInvBal: 'رصيدك الحالي',
+    btnShareText: 'مشاركة الرابط 🚀',
+    btnInvBack: 'العودة للأقسام',
     langName: 'العربية',
     langFlag: '🇸🇦',
     dir: 'rtl',
@@ -50,6 +56,12 @@ const i18n = {
     lblChannel: 'Withdrawal Proofs',
     btnInvite: 'Invite Friends 🎁',
     btnWithdraw: 'Withdraw 💳',
+    invTitle: 'Invite Friends',
+    invDesc: 'Invite your friends to increase your earnings and unlock direct withdrawal!',
+    lblInvCount: 'Invites Count',
+    lblInvBal: 'Current Balance',
+    btnShareText: 'Share Link 🚀',
+    btnInvBack: 'Back to Categories',
     langName: 'English',
     langFlag: '🇬🇧',
     dir: 'ltr',
@@ -152,6 +164,14 @@ function applyLanguage() {
   if(document.getElementById('lbl-invite')) document.getElementById('lbl-invite').innerText = i18n[currentLang].btnInvite;
   if(document.getElementById('lbl-withdraw')) document.getElementById('lbl-withdraw').innerText = i18n[currentLang].btnWithdraw;
   
+  // نصوص صفحة الدعوة
+  if(document.getElementById('inv-title')) document.getElementById('inv-title').innerText = i18n[currentLang].invTitle;
+  if(document.getElementById('inv-desc')) document.getElementById('inv-desc').innerText = i18n[currentLang].invDesc;
+  if(document.getElementById('lbl-inv-count')) document.getElementById('lbl-inv-count').innerText = i18n[currentLang].lblInvCount;
+  if(document.getElementById('lbl-inv-bal')) document.getElementById('lbl-inv-bal').innerText = i18n[currentLang].lblInvBal;
+  if(document.getElementById('btn-share-text')) document.getElementById('btn-share-text').innerText = i18n[currentLang].btnShareText;
+  if(document.getElementById('btn-inv-back')) document.getElementById('btn-inv-back').innerText = i18n[currentLang].btnInvBack;
+
   renderCategoriesGrid();
 
   if (!document.getElementById('screen-quiz').classList.contains('hidden')) {
@@ -187,6 +207,9 @@ async function initApp() {
 
 function updateBalanceUI() {
   document.getElementById('user-balance').innerText = `$${totalBalance.toFixed(3)}`;
+  if(document.getElementById('inv-bal-val')) {
+    document.getElementById('inv-bal-val').innerText = `$${totalBalance.toFixed(3)}`;
+  }
 }
 
 function renderCategoriesGrid() {
@@ -437,25 +460,51 @@ window.finishRewardClaim = async () => {
 
 window.openChannel = () => {
   const channelUrl = 'https://t.me/+0giQaGJfCQ0xMzcy';
-  if (tg && tg.openTelegramLink ) {
+  if (tg && tg.openTelegramLink  ) {
     tg.openTelegramLink(channelUrl);
   } else {
     window.open(channelUrl, '_blank');
   }
 };
 
-// دالة دعوة الأصدقاء (رابط الإحالة)
-window.openInvite = () => {
+// --- دوال صفحة الدعوة (الجديدة) ---
+
+window.openInviteScreen = () => {
   if (!telegramUser) return showToast(currentLang === 'ar' ? 'متاح داخل تليجرام فقط' : 'Available in Telegram only', '⚠️');
 
   const inviteLink = `https://t.me/${BOT_USERNAME}/app?startapp=${telegramUser.id}`;
   
-  // أزلنا الرابط من النص لأن تليجرام سيضيفه تلقائياً في الأسفل
+  // تحديث البيانات في الشاشة
+  document.getElementById('inv-link-input' ).value = inviteLink;
+  document.getElementById('inv-count-val').innerText = referralsCount;
+  document.getElementById('inv-bal-val').innerText = `$${totalBalance.toFixed(3)}`;
+
+  // إخفاء الأقسام وإظهار صفحة الدعوة
+  document.getElementById('screen-categories').classList.add('hidden');
+  document.getElementById('screen-invite').classList.remove('hidden');
+};
+
+window.closeInviteScreen = () => {
+  document.getElementById('screen-invite').classList.add('hidden');
+  document.getElementById('screen-categories').classList.remove('hidden');
+};
+
+window.copyInviteLink = () => {
+  const copyText = document.getElementById('inv-link-input');
+  copyText.select();
+  copyText.setSelectionRange(0, 99999); // للهواتف المحمولة
+  navigator.clipboard.writeText(copyText.value).then(() => {
+    showToast(currentLang === 'ar' ? 'تم نسخ الرابط بنجاح!' : 'Link copied successfully!', '📋');
+    triggerHaptic('light');
+  });
+};
+
+window.shareInviteLink = () => {
+  const inviteLink = document.getElementById('inv-link-input').value;
   const text = currentLang === 'ar' 
     ? `العب واربح المال الحقيقي معي في تحدي الأسئلة! 💰` 
     : `Play and earn real money with me! 💰`;
 
-  // دمج الرابط والنص بشكل صحيح
   const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent(text)}`;
 
   if (tg && tg.openTelegramLink) {
@@ -465,8 +514,8 @@ window.openInvite = () => {
   }
 };
 
+// --- دالة سحب الأرباح (التحقق من الشروط) ---
 
-// دالة سحب الأرباح (التحقق من الشروط)
 window.openWithdraw = () => {
   // 1. التحقق من الرصيد
   if (totalBalance < MIN_WITHDRAW) {
@@ -489,7 +538,6 @@ window.openWithdraw = () => {
       '👥'
     );
   }
-
   // 3. التحقق من الوصول لـ 50 دعوة لظهور حساب الأدمن
   if (referralsCount >= VIP_INVITES) {
     triggerHaptic('success');
@@ -497,7 +545,7 @@ window.openWithdraw = () => {
       currentLang === 'ar' ? 'تم استيفاء الشروط! سيتم تحويلك للإدارة للسحب.' : 'Conditions met! Redirecting to admin.', 
       '✅'
     );
-    
+
     setTimeout(() => {
       const adminUrl = `https://t.me/${ADMIN_USERNAME}`;
       if (tg && tg.openTelegramLink ) {
