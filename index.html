@@ -158,7 +158,7 @@
         <!-- شريط تقدم الرصيد -->
         <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 mb-3 text-right">
           <div class="flex justify-between text-xs font-bold mb-2">
-            <span class="text-slate-300" id="lbl-wd-bal-req">الرصيد المطلوب (50 كوينز)</span>
+            <span class="text-slate-300" id="lbl-wd-bal-req">الرصيد المطلوب (5 كوينز)</span>
             <span id="wd-bal-progress" class="text-emerald-400">0%</span>
           </div>
           <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
@@ -166,10 +166,10 @@
           </div>
         </div>
 
-        <!-- شريط تقدم الدعوات (مخفي افتراضياً حتى يصل لـ 50 كوينز) -->
+        <!-- شريط تقدم الدعوات -->
         <div id="inv-req-section" class="hidden bg-slate-900/80 p-4 rounded-xl border border-slate-800 mb-5 text-right">
           <div class="flex justify-between text-xs font-bold mb-2">
-            <span class="text-slate-300" id="lbl-wd-inv-req">الدعوات المطلوبة (20)</span>
+            <span class="text-slate-300" id="lbl-wd-inv-req">الدعوات المطلوبة (5)</span>
             <span id="wd-inv-progress" class="text-amber-400">0%</span>
           </div>
           <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
@@ -235,8 +235,9 @@
         </div>
       </div>
       <div class="flex flex-col gap-2.5 w-full mt-2">
+        <!-- زر الإعلان المحدث -->
         <button onclick="window.openAdModal()" class="btn-shimmer text-slate-950 font-black py-3.5 px-6 rounded-xl text-base flex items-center justify-center gap-2">
-          <span>🎁</span><span id="btn-claim-text">سحب الأرباح لحسابك</span>
+          <span id="btn-claim-text">شاهد إعلان لجمع الأرباح 📺</span>
         </button>
         <button onclick="window.backToCategories()" class="glass-btn text-slate-300 font-bold py-3 px-6 rounded-xl text-xs hover:text-white">
           <span id="btn-back-text">العودة للأقسام</span>
