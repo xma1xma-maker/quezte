@@ -1,7 +1,7 @@
 import { categoriesMetaData, questionPools, initializeDatabase } from './data.js';
 import { supabase, checkAndRegisterUser, updateUserData } from './supabase.js';
 
-// ⚠️ إعدادات البوت والسحب (تم تخفيضها لتكون واقعية لـ Adsgram)
+// ⚠️ إعدادات البوت والسحب
 const BOT_USERNAME = 'Speed_QuizBot'; 
 const ADMIN_USERNAME = 'hamsterze'; 
 const MIN_WITHDRAW = 5; // 5 كوينز فقط
@@ -429,7 +429,8 @@ window.openAdModal = () => {
     return showToast(currentLang === 'ar' ? 'نظام الإعلانات قيد التحديث، حاول مجدداً' : 'Ad system updating, try again', '⚠️');
   }
 
-  const AdController = window.Adsgram.init({ blockId: "46862" });
+  // تم التحديث إلى الكود الإعلاني الجديد (Interstitial)
+  const AdController = window.Adsgram.init({ blockId: "int-46905" });
 
   AdController.show().then((result) => {
     triggerHaptic('success');
