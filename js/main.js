@@ -4,7 +4,7 @@ import { supabase, checkAndRegisterUser, updateUserData } from './supabase.js';
 // ⚠️ إعدادات البوت والسحب (قم بتغييرها ببياناتك الحقيقية)
 const BOT_USERNAME = 'Speed_QuizBot'; // معرف البوت الخاص بك بدون @
 const ADMIN_USERNAME = 'hamsterze'; // معرف حسابك الشخصي على تليجرام بدون @ للتواصل
-const MIN_WITHDRAW = 50; // الحد الأدنى للسحب (دولار)
+const MIN_WITHDRAW = 50; // الحد الأدنى للسحب (كوينز)
 const MIN_INVITES = 20; // الحد الأدنى للدعوات لطلب السحب
 const VIP_INVITES = 50; // الدعوات المطلوبة لظهور حسابك الشخصي
 
@@ -14,7 +14,7 @@ const i18n = {
     lblBalance: 'الرصيد الكلي',
     catBadge: '⚡ مربح وسريع جداً',
     catTitle: 'اختر القسم وابدأ التحدي',
-    catSubtitle: '20 سؤالاً سريعاً. احصل على <span class="text-emerald-400 font-bold">$0.001</span> عن كل إجابة صحيحة!',
+    catSubtitle: '20 سؤالاً سريعاً. احصل على <span class="text-emerald-400 font-bold">0.001 كوينز</span> عن كل إجابة صحيحة!',
     lblResScore: 'الإجابات الصحيحة',
     lblResEarned: 'أرباح الجولة',
     btnClaim: 'سحب الأرباح لحسابك',
@@ -35,7 +35,7 @@ const i18n = {
     btnInvBack: 'العودة للأقسام',
     wdTitle: 'سحب الأرباح',
     wdDesc: 'تأكد من استيفاء الشروط لسحب أرباحك مباشرة.',
-    lblWdBalReq: `الرصيد المطلوب ($${MIN_WITHDRAW})`,
+    lblWdBalReq: `الرصيد المطلوب (${MIN_WITHDRAW} كوينز)`,
     lblWdInvReq: `الدعوات المطلوبة (${MIN_INVITES})`,
     btnReqWithdraw: 'طلب السحب الآن',
     btnWdBack: 'العودة للأقسام',
@@ -49,7 +49,7 @@ const i18n = {
     lblBalance: 'Total Balance',
     catBadge: '⚡ Fast & Rewarding',
     catTitle: 'Choose Category & Play',
-    catSubtitle: '20 rapid questions. Earn <span class="text-emerald-400 font-bold">$0.001</span> for each correct answer!',
+    catSubtitle: '20 rapid questions. Earn <span class="text-emerald-400 font-bold">0.001 Coins</span> for each correct answer!',
     lblResScore: 'Correct Answers',
     lblResEarned: 'Session Earned',
     btnClaim: 'Claim Earnings',
@@ -70,7 +70,7 @@ const i18n = {
     btnInvBack: 'Back to Categories',
     wdTitle: 'Withdraw Earnings',
     wdDesc: 'Ensure you meet the conditions to withdraw directly.',
-    lblWdBalReq: `Required Balance ($${MIN_WITHDRAW})`,
+    lblWdBalReq: `Required Balance (${MIN_WITHDRAW} Coins)`,
     lblWdInvReq: `Required Invites (${MIN_INVITES})`,
     btnReqWithdraw: 'Request Withdrawal Now',
     btnWdBack: 'Back to Categories',
@@ -218,9 +218,9 @@ async function initApp() {
 }
 
 function updateBalanceUI() {
-  document.getElementById('user-balance').innerText = `$${totalBalance.toFixed(3)}`;
+  document.getElementById('user-balance').innerText = `🪙 ${totalBalance.toFixed(3)}`;
   if(document.getElementById('inv-bal-val')) {
-    document.getElementById('inv-bal-val').innerText = `$${totalBalance.toFixed(3)}`;
+    document.getElementById('inv-bal-val').innerText = `🪙 ${totalBalance.toFixed(3)}`;
   }
 }
 
@@ -319,7 +319,7 @@ function renderCurrentQuestionUI() {
   document.getElementById('question-cat-tag').innerHTML = `${catMeta.icon} ${catMeta.name[currentLang]}`;
   document.getElementById('q-counter').innerText = `${currentQuestionIndex + 1} / ${activeQuizQuestions.length}`;
   
-  document.getElementById('score-counter').innerText = `$${(sessionScore * REWARD_PER_CORRECT).toFixed(3)}`;
+  document.getElementById('score-counter').innerText = `🪙 ${(sessionScore * REWARD_PER_CORRECT).toFixed(3)}`;
   document.getElementById('question-text').innerText = qLang.q;
 
   const flagContainer = document.getElementById('flag-container');
@@ -394,7 +394,7 @@ function finishGame() {
   document.getElementById('screen-quiz').classList.add('hidden');
   document.getElementById('result-screen').classList.remove('hidden');
   document.getElementById('res-correct-count').innerText = `${sessionScore} / 20`;
-  document.getElementById('res-earned-amount').innerText = `$${(sessionScore * REWARD_PER_CORRECT).toFixed(3)}`;
+  document.getElementById('res-earned-amount').innerText = `🪙 ${(sessionScore * REWARD_PER_CORRECT).toFixed(3)}`;
   
   if (sessionScore >= 15 && window.confetti) {
     window.confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
@@ -485,10 +485,10 @@ window.openInviteScreen = () => {
   if (!telegramUser) return showToast(currentLang === 'ar' ? 'متاح داخل تليجرام فقط' : 'Available in Telegram only', '⚠️');
 
   const inviteLink = `https://t.me/${BOT_USERNAME}/apps?startapp=${telegramUser.id}`;
-
+  
   document.getElementById('inv-link-input' ).value = inviteLink;
   document.getElementById('inv-count-val').innerText = referralsCount;
-  document.getElementById('inv-bal-val').innerText = `$${totalBalance.toFixed(3)}`;
+  document.getElementById('inv-bal-val').innerText = `🪙 ${totalBalance.toFixed(3)}`;
 
   document.getElementById('screen-categories').classList.add('hidden');
   document.getElementById('screen-invite').classList.remove('hidden');
@@ -512,8 +512,8 @@ window.copyInviteLink = () => {
 window.shareInviteLink = () => {
   const inviteLink = document.getElementById('inv-link-input').value;
   const text = currentLang === 'ar' 
-    ? `العب واربح المال الحقيقي معي في تحدي الأسئلة! 💰` 
-    : `Play and earn real money with me! 💰`;
+    ? `العب واربح الكوينز معي في تحدي الأسئلة! 🪙` 
+    : `Play and earn coins with me! 🪙`;
 
   const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent(text)}`;
 
@@ -527,18 +527,21 @@ window.shareInviteLink = () => {
 // --- دوال صفحة السحب (الجديدة) ---
 
 window.openWithdrawScreen = () => {
-  // حساب النسب المئوية
   const balPercent = Math.min(100, (totalBalance / MIN_WITHDRAW) * 100);
   const invPercent = Math.min(100, (referralsCount / MIN_INVITES) * 100);
   
-  // تحديث الواجهة
   document.getElementById('wd-bal-progress').innerText = `${balPercent.toFixed(0)}%`;
   document.getElementById('wd-bal-bar').style.width = `${balPercent}%`;
   
-  document.getElementById('wd-inv-progress').innerText = `${invPercent.toFixed(0)}%`;
-  document.getElementById('wd-inv-bar').style.width = `${invPercent}%`;
+  // إظهار شريط الدعوات فقط إذا اكتمل الرصيد
+  if (totalBalance >= MIN_WITHDRAW) {
+    document.getElementById('inv-req-section').classList.remove('hidden');
+    document.getElementById('wd-inv-progress').innerText = `${invPercent.toFixed(0)}%`;
+    document.getElementById('wd-inv-bar').style.width = `${invPercent}%`;
+  } else {
+    document.getElementById('inv-req-section').classList.add('hidden');
+  }
 
-  // إظهار الشاشة
   document.getElementById('screen-categories').classList.add('hidden');
   document.getElementById('screen-withdraw').classList.remove('hidden');
 };
@@ -551,7 +554,7 @@ window.closeWithdrawScreen = () => {
 window.processWithdrawal = () => {
   if (totalBalance < MIN_WITHDRAW) {
     triggerHaptic('error');
-    return showToast(currentLang === 'ar' ? `تحتاج إلى $${MIN_WITHDRAW} للسحب.` : `Need $${MIN_WITHDRAW} to withdraw.`, '⚠️');
+    return showToast(currentLang === 'ar' ? `تحتاج إلى ${MIN_WITHDRAW} كوينز للسحب.` : `Need ${MIN_WITHDRAW} coins to withdraw.`, '⚠️');
   }
 
   if (referralsCount < MIN_INVITES) {
