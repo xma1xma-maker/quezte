@@ -3,7 +3,7 @@ import { supabase, checkAndRegisterUser, updateUserData } from './supabase.js';
 
 // ⚠️ إعدادات البوت والسحب (قم بتغييرها ببياناتك الحقيقية)
 const BOT_USERNAME = 'Speed_QuizBot'; // معرف البوت الخاص بك بدون @
-const ADMIN_USERNAME = 'YOUR_USERNAME'; // معرف حسابك الشخصي على تليجرام بدون @ للتواصل
+const ADMIN_USERNAME = 'hamsterze'; // معرف حسابك الشخصي على تليجرام بدون @ للتواصل
 const MIN_WITHDRAW = 50; // الحد الأدنى للسحب (دولار)
 const MIN_INVITES = 20; // الحد الأدنى للدعوات لطلب السحب
 const VIP_INVITES = 50; // الدعوات المطلوبة لظهور حسابك الشخصي
