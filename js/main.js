@@ -429,7 +429,7 @@ window.openAdModal = () => {
     return showToast(currentLang === 'ar' ? 'نظام الإعلانات قيد التحديث، حاول مجدداً' : 'Ad system updating, try again', '⚠️');
   }
 
-  const AdController = window.Adsgram.init({ blockId: "46832" });
+  const AdController = window.Adsgram.init({ blockId: "46862" });
 
   AdController.show().then((result) => {
     triggerHaptic('success');
