@@ -1,12 +1,12 @@
 import { categoriesMetaData, questionPools, initializeDatabase } from './data.js';
 import { supabase, checkAndRegisterUser, updateUserData } from './supabase.js';
 
-// ⚠️ إعدادات البوت والسحب (قم بتغييرها ببياناتك الحقيقية)
-const BOT_USERNAME = 'Speed_QuizBot'; // معرف البوت الخاص بك بدون @
-const ADMIN_USERNAME = 'hamsterze'; // معرف حسابك الشخصي على تليجرام بدون @ للتواصل
-const MIN_WITHDRAW = 50; // الحد الأدنى للسحب (كوينز)
-const MIN_INVITES = 20; // الحد الأدنى للدعوات لطلب السحب
-const VIP_INVITES = 50; // الدعوات المطلوبة لظهور حسابك الشخصي
+// ⚠️ إعدادات البوت والسحب
+const BOT_USERNAME = 'Speed_QuizBot'; 
+const ADMIN_USERNAME = 'hamsterze'; 
+const MIN_WITHDRAW = 50; 
+const MIN_INVITES = 20; 
+const VIP_INVITES = 50; 
 
 // قاموس الترجمة للواجهة
 const i18n = {
@@ -19,9 +19,6 @@ const i18n = {
     lblResEarned: 'أرباح الجولة',
     btnClaim: 'سحب الأرباح لحسابك',
     btnBack: 'العودة للأقسام',
-    adTitle: 'إعلان مكافأة تليجرام',
-    lblAdWait: 'يرجى الانتظار...',
-    btnClaimAdNow: 'إضافة الأرباح الآن 💰',
     lblExit: 'خروج',
     lblCorrect: 'الصحيحة',
     lblChannel: 'قناة إثباتات السحب',
@@ -54,9 +51,6 @@ const i18n = {
     lblResEarned: 'Session Earned',
     btnClaim: 'Claim Earnings',
     btnBack: 'Back to Categories',
-    adTitle: 'Telegram Rewarded Ad',
-    lblAdWait: 'Please wait...',
-    btnClaimAdNow: 'Claim Earnings Now 💰',
     lblExit: 'Exit',
     lblCorrect: 'Correct',
     lblChannel: 'Withdrawal Proofs',
@@ -165,7 +159,6 @@ function applyLanguage() {
   document.getElementById('lbl-res-earned').innerText = i18n[currentLang].lblResEarned;
   document.getElementById('btn-claim-text').innerText = i18n[currentLang].btnClaim;
   document.getElementById('btn-back-text').innerText = i18n[currentLang].btnBack;
-  document.getElementById('ad-title').innerText = i18n[currentLang].adTitle;
   
   if(document.getElementById('lbl-exit')) document.getElementById('lbl-exit').innerText = i18n[currentLang].lblExit;
   if(document.getElementById('lbl-channel')) document.getElementById('lbl-channel').innerText = i18n[currentLang].lblChannel;
@@ -429,33 +422,28 @@ window.exitQuiz = () => {
   renderCategoriesGrid();
 };
 
+// --- دالة Adsgram الرسمية ---
 window.openAdModal = () => {
-  document.getElementById('ad-modal').classList.remove('hidden');
-  let elapsed = 0;
-  const progressBar = document.getElementById('ad-progress-bar');
-  const timerText = document.getElementById('ad-timer-text');
-  const btnComplete = document.getElementById('btn-complete-ad');
-  
-  document.getElementById('lbl-ad-wait').innerText = i18n[currentLang].lblAdWait;
-  btnComplete.disabled = true;
-  btnComplete.className = "w-full py-3 bg-slate-800 text-slate-500 font-bold text-xs rounded-xl border border-slate-700 cursor-not-allowed";
+  if (!window.Adsgram) {
+    triggerHaptic('error');
+    return showToast(currentLang === 'ar' ? 'نظام الإعلانات قيد التحديث، حاول مجدداً' : 'Ad system updating, try again', '⚠️');
+  }
 
-  const adInt = setInterval(() => {
-    elapsed += 0.1;
-    timerText.innerText = `${Math.max(0, 5 - elapsed).toFixed(0)}s`;
-    progressBar.style.width = `${(elapsed / 5) * 100}%`;
-    if (elapsed >= 5) {
-      clearInterval(adInt);
-      btnComplete.disabled = false;
-      btnComplete.className = "btn-shimmer w-full py-3 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 active:scale-98 transition-all cursor-pointer";
-      document.getElementById('lbl-ad-wait').innerText = i18n[currentLang].btnClaimAdNow;
-      triggerHaptic('success');
-    }
-  }, 100);
+  const AdController = window.Adsgram.init({ blockId: "46791" });
+
+  AdController.show().then((result) => {
+    triggerHaptic('success');
+    window.finishRewardClaim();
+  }).catch((result) => {
+    triggerHaptic('error');
+    showToast(
+      currentLang === 'ar' ? 'يجب مشاهدة الإعلان بالكامل للحصول على المكافأة!' : 'You must watch the full ad to get the reward!', 
+      '❌'
+    );
+  });
 };
 
 window.finishRewardClaim = async () => {
-  document.getElementById('ad-modal').classList.add('hidden');
   totalBalance += (sessionScore * REWARD_PER_CORRECT);
   
   if (telegramUser) {
@@ -502,7 +490,7 @@ window.closeInviteScreen = () => {
 window.copyInviteLink = () => {
   const copyText = document.getElementById('inv-link-input');
   copyText.select();
-  copyText.setSelectionRange(0, 99999); // للهواتف المحمولة
+  copyText.setSelectionRange(0, 99999); 
   navigator.clipboard.writeText(copyText.value).then(() => {
     showToast(currentLang === 'ar' ? 'تم نسخ الرابط بنجاح!' : 'Link copied successfully!', '📋');
     triggerHaptic('light');
@@ -524,7 +512,7 @@ window.shareInviteLink = () => {
   }
 };
 
-// --- دوال صفحة السحب (الجديدة) ---
+// --- دوال صفحة السحب ---
 
 window.openWithdrawScreen = () => {
   const balPercent = Math.min(100, (totalBalance / MIN_WITHDRAW) * 100);
@@ -533,7 +521,6 @@ window.openWithdrawScreen = () => {
   document.getElementById('wd-bal-progress').innerText = `${balPercent.toFixed(0)}%`;
   document.getElementById('wd-bal-bar').style.width = `${balPercent}%`;
   
-  // إظهار شريط الدعوات فقط إذا اكتمل الرصيد
   if (totalBalance >= MIN_WITHDRAW) {
     document.getElementById('inv-req-section').classList.remove('hidden');
     document.getElementById('wd-inv-progress').innerText = `${invPercent.toFixed(0)}%`;
