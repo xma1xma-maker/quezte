@@ -1,12 +1,12 @@
 import { categoriesMetaData, questionPools, initializeDatabase } from './data.js';
 import { supabase, checkAndRegisterUser, updateUserData } from './supabase.js';
 
-// ⚠️ إعدادات البوت والسحب
+// ⚠️ إعدادات البوت والسحب (تم تخفيضها لتكون واقعية لـ Adsgram)
 const BOT_USERNAME = 'Speed_QuizBot'; 
 const ADMIN_USERNAME = 'hamsterze'; 
-const MIN_WITHDRAW = 50; 
-const MIN_INVITES = 20; 
-const VIP_INVITES = 50; 
+const MIN_WITHDRAW = 5; // 5 كوينز فقط
+const MIN_INVITES = 5; // 5 دعوات فقط
+const VIP_INVITES = 10; // 10 دعوات لظهور حسابك
 
 // قاموس الترجمة للواجهة
 const i18n = {
@@ -17,7 +17,7 @@ const i18n = {
     catSubtitle: '20 سؤالاً سريعاً. احصل على <span class="text-emerald-400 font-bold">0.001 كوينز</span> عن كل إجابة صحيحة!',
     lblResScore: 'الإجابات الصحيحة',
     lblResEarned: 'أرباح الجولة',
-    btnClaim: 'سحب الأرباح لحسابك',
+    btnClaim: 'شاهد إعلان لجمع الأرباح 📺',
     btnBack: 'العودة للأقسام',
     lblExit: 'خروج',
     lblCorrect: 'الصحيحة',
@@ -49,7 +49,7 @@ const i18n = {
     catSubtitle: '20 rapid questions. Earn <span class="text-emerald-400 font-bold">0.001 Coins</span> for each correct answer!',
     lblResScore: 'Correct Answers',
     lblResEarned: 'Session Earned',
-    btnClaim: 'Claim Earnings',
+    btnClaim: 'Watch Ad to Claim 📺',
     btnBack: 'Back to Categories',
     lblExit: 'Exit',
     lblCorrect: 'Correct',
