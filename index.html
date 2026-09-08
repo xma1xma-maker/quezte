@@ -59,7 +59,7 @@
       <span class="text-amber-400 text-lg">💰</span>
       <div class="flex flex-col">
         <span class="text-[10px] text-slate-400 font-bold leading-none" id="lbl-balance">الرصيد الكلي</span>
-        <span id="user-balance" class="text-sm font-extrabold text-amber-400 leading-tight">$0.000</span>
+        <span id="user-balance" class="text-sm font-extrabold text-amber-400 leading-tight">🪙 0.000</span>
       </div>
     </div>
     <div class="text-center">
@@ -79,7 +79,7 @@
       <div class="glass-card rounded-2xl p-4 text-center relative overflow-hidden border border-sky-500/20">
         <div class="inline-block px-3 py-1 bg-sky-500/10 rounded-full text-sky-400 text-xs font-extrabold mb-2 border border-sky-500/30" id="cat-badge">⚡ مربح وسريع جداً</div>
         <h2 class="text-lg font-black text-white mb-1" id="cat-title">اختر القسم وابدأ التحدي</h2>
-        <p class="text-xs text-slate-300" id="cat-subtitle">20 سؤالاً سريعاً. احصل على <span class="text-emerald-400 font-bold">$0.001</span> عن كل إجابة صحيحة!</p>
+        <p class="text-xs text-slate-300" id="cat-subtitle">20 سؤالاً سريعاً. احصل على <span class="text-emerald-400 font-bold">0.001 كوينز</span> عن كل إجابة صحيحة!</p>
       </div>
       
       <!-- Categories Grid Container -->
@@ -120,7 +120,7 @@
           </div>
           <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
             <span class="text-[10px] text-slate-400 font-bold block mb-1" id="lbl-inv-bal">رصيدك الحالي</span>
-            <span id="inv-bal-val" class="text-xl font-extrabold text-emerald-400">$0.000</span>
+            <span id="inv-bal-val" class="text-xl font-extrabold text-emerald-400">🪙 0.000</span>
           </div>
         </div>
 
@@ -142,17 +142,21 @@
       </div>
     </div>
 
-    <!-- SCREEN 3: WITHDRAW (NEW) -->
+    <!-- SCREEN 3: WITHDRAW -->
     <div id="screen-withdraw" class="hidden flex flex-col gap-4 my-auto">
       <div class="glass-card rounded-2xl p-6 text-center border border-emerald-500/30 relative">
         <div class="w-16 h-16 mx-auto bg-emerald-500/20 rounded-full flex items-center justify-center text-3xl mb-3 border border-emerald-500/40 shadow-lg shadow-emerald-500/20">💳</div>
-        <h2 class="text-xl font-black text-white mb-2" id="wd-title">سحب الأرباح</h2>
+        <h2 class="text-xl font-black text-white mb-1" id="wd-title">سحب الأرباح</h2>
+        
+        <!-- ملاحظة التحويل -->
+        <p class="text-xs text-emerald-400 font-bold mb-2" id="wd-exchange">🪙 1 كوينز = 1 دولار 💵</p>
+        
         <p class="text-xs text-slate-300 mb-5 leading-relaxed" id="wd-desc">تأكد من استيفاء الشروط لسحب أرباحك مباشرة.</p>
         
         <!-- شريط تقدم الرصيد -->
         <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 mb-3 text-right">
           <div class="flex justify-between text-xs font-bold mb-2">
-            <span class="text-slate-300" id="lbl-wd-bal-req">الرصيد المطلوب ($50)</span>
+            <span class="text-slate-300" id="lbl-wd-bal-req">الرصيد المطلوب (50 كوينز)</span>
             <span id="wd-bal-progress" class="text-emerald-400">0%</span>
           </div>
           <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
@@ -160,8 +164,8 @@
           </div>
         </div>
 
-        <!-- شريط تقدم الدعوات -->
-        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 mb-5 text-right">
+        <!-- شريط تقدم الدعوات (مخفي افتراضياً حتى يصل لـ 50 كوينز) -->
+        <div id="inv-req-section" class="hidden bg-slate-900/80 p-4 rounded-xl border border-slate-800 mb-5 text-right">
           <div class="flex justify-between text-xs font-bold mb-2">
             <span class="text-slate-300" id="lbl-wd-inv-req">الدعوات المطلوبة (20)</span>
             <span id="wd-inv-progress" class="text-amber-400">0%</span>
@@ -172,7 +176,7 @@
         </div>
 
         <!-- أزرار الإجراءات -->
-        <div class="flex flex-col gap-2.5">
+        <div class="flex flex-col gap-2.5 mt-2">
           <button onclick="window.processWithdrawal()" class="w-full btn-shimmer py-3.5 rounded-xl text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95">
             <span id="btn-req-withdraw">طلب السحب الآن</span>
           </button>
@@ -196,7 +200,7 @@
           <span>✅</span> <span id="correct-counter">0</span>
         </div>
         <div class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded-xl flex items-center gap-1">
-          <span>⭐</span> <span id="score-counter">$0.000</span>
+          <span>⭐</span> <span id="score-counter">🪙 0.000</span>
         </div>
       </div>
       <div class="w-full bg-slate-800/80 rounded-full h-2.5 mb-4 p-0.5 border border-slate-700/50">
@@ -225,7 +229,7 @@
         </div>
         <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-center">
           <span class="text-[10px] text-slate-400 font-bold block" id="lbl-res-earned">أرباح الجولة</span>
-          <span id="res-earned-amount" class="text-lg font-extrabold text-emerald-400">$0.000</span>
+          <span id="res-earned-amount" class="text-lg font-extrabold text-emerald-400">🪙 0.000</span>
         </div>
       </div>
       <div class="flex flex-col gap-2.5 w-full mt-2">
