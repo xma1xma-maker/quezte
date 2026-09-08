@@ -34,7 +34,7 @@
   <style>
     body {
       background-color: #060913;
-      background-image: radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.12  ) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(251, 191, 36, 0.08) 0px, transparent 50%);
+      background-image: radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.12 ) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(251, 191, 36, 0.08) 0px, transparent 50%);
       background-attachment: fixed;
       color: #f8fafc;
       font-family: 'Cairo', sans-serif;
@@ -81,7 +81,15 @@
         <h2 class="text-lg font-black text-white mb-1" id="cat-title">اختر القسم وابدأ التحدي</h2>
         <p class="text-xs text-slate-300" id="cat-subtitle">20 سؤالاً سريعاً. احصل على <span class="text-emerald-400 font-bold">$0.001</span> عن كل إجابة صحيحة!</p>
       </div>
-      <div id="categories-grid" class="grid grid-cols-2 gap-3 max-h-[58vh] overflow-y-auto pr-1"></div>
+      
+      <!-- Categories Grid Container -->
+      <div id="categories-grid" class="grid grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1"></div>
+      
+      <!-- زر قناة الإثباتات -->
+      <button onclick="window.openChannel()" class="mt-1 w-full glass-btn py-3 rounded-xl text-sky-400 font-bold text-sm flex items-center justify-center gap-2 border border-sky-500/30 hover:bg-sky-500/10 transition-all active:scale-95">
+        <span>📢</span>
+        <span id="lbl-channel">قناة إثباتات السحب</span>
+      </button>
     </div>
 
     <!-- SCREEN 2: QUIZ -->
