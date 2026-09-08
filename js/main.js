@@ -16,6 +16,7 @@ const i18n = {
     lblAdWait: 'يرجى الانتظار...',
     btnClaimAdNow: 'إضافة الأرباح الآن 💰',
     lblExit: 'خروج',
+    lblCorrect: 'الصحيحة',
     langName: 'العربية',
     langFlag: '🇸🇦',
     dir: 'rtl',
@@ -35,6 +36,7 @@ const i18n = {
     lblAdWait: 'Please wait...',
     btnClaimAdNow: 'Claim Earnings Now 💰',
     lblExit: 'Exit',
+    lblCorrect: 'Correct',
     langName: 'English',
     langFlag: '🇬🇧',
     dir: 'ltr',
@@ -73,6 +75,13 @@ let timerSecondsLeft = 5;
 const TIME_LIMIT_PER_Q = 5;
 const REWARD_PER_CORRECT = 0.001;
 const COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 ساعة
+
+/* نظام الاهتزاز لتليجرام */
+function triggerHaptic(style) {
+  if (tg && tg.HapticFeedback) {
+    tg.HapticFeedback.impactOccurred(style);
+  }
+}
 
 /* نظام الصوت Web Audio API */
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -166,7 +175,9 @@ function renderCategoriesGrid() {
     const cooldownEndTime = categoryCooldowns[cat.id] || 0;
     const isCooldown = Date.now() < cooldownEndTime;
     const card = document.createElement('div');
-    card.className = `glass-card rounded-2xl p-3.5 flex flex-col justify-between border ${isCooldown ? 'border-amber-500/30 opacity-80' : 'border-slate-800 cursor-pointer hover:border-sky-500/50'}`;
+    
+    // تغيير لون البطاقة إذا كانت في فترة الانتظار
+    card.className = `glass-card rounded-2xl p-3.5 flex flex-col justify-between border ${isCooldown ? 'border-amber-500/30 opacity-70' : 'border-slate-800 cursor-pointer hover:border-sky-500/50'}`;
     
     let statusText = '';
     if (isCooldown) {
@@ -175,9 +186,9 @@ function renderCategoriesGrid() {
       const mins = Math.floor((diffSec % 3600) / 60);
       const secs = diffSec % 60;
       const timeStr = `${hours}:${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
-      statusText = `${i18n[currentLang].cooldownWait} ${timeStr}`;
+      statusText = `<span class="text-amber-400">${i18n[currentLang].cooldownWait} ${timeStr}</span>`;
     } else {
-      statusText = i18n[currentLang].cooldownReady;
+      statusText = `<span class="text-emerald-400">${i18n[currentLang].cooldownReady}</span>`;
     }
     
     card.innerHTML = `
@@ -186,11 +197,16 @@ function renderCategoriesGrid() {
           <span class="text-3xl">${cat.icon}</span>
         </div>
         <h3 class="font-bold text-sm text-white">${cat.name[currentLang]}</h3>
-        <span class="text-[10px] text-emerald-400 mt-2 block font-mono">${statusText}</span>
+        <span class="text-[11px] mt-2 block font-mono font-bold">${statusText}</span>
       </div>
     `;
+    
     card.onclick = () => {
-      if (isCooldown) { playSound('wrong'); return showToast(currentLang === 'ar' ? 'هذا القسم في فترة الانتظار!' : 'Category is on cooldown!', '⏳'); }
+      if (isCooldown) { 
+        playSound('wrong'); 
+        triggerHaptic('heavy');
+        return showToast(currentLang === 'ar' ? 'هذا القسم في فترة الانتظار!' : 'Category is on cooldown!', '⏳'); 
+      }
       startCategoryQuiz(cat.id);
     };
     grid.appendChild(card);
@@ -221,7 +237,13 @@ function startCategoryQuiz(catId) {
     };
   });
 
-  currentQuestionIndex = 0; sessionScore = 0;
+  currentQuestionIndex = 0; 
+  sessionScore = 0;
+  
+  // تصفير عداد الإجابات الصحيحة في الواجهة عند بدء قسم جديد
+  const correctCounter = document.getElementById('correct-counter');
+  if(correctCounter) correctCounter.innerText = '0';
+
   document.getElementById('screen-categories').classList.add('hidden');
   document.getElementById('screen-quiz').classList.remove('hidden');
   loadNextQuestion();
@@ -242,10 +264,6 @@ function renderCurrentQuestionUI() {
   
   document.getElementById('question-cat-tag').innerHTML = `${catMeta.icon} ${catMeta.name[currentLang]}`;
   document.getElementById('q-counter').innerText = `${currentQuestionIndex + 1} / ${activeQuizQuestions.length}`;
-  
-  // تحديث عداد الإجابات الصحيحة بدلاً من الاستمرار
-  const correctCounter = document.getElementById('correct-counter');
-  if(correctCounter) correctCounter.innerText = sessionScore;
   
   document.getElementById('score-counter').innerText = `$${(sessionScore * REWARD_PER_CORRECT).toFixed(3)}`;
   document.getElementById('question-text').innerText = qLang.q;
@@ -285,6 +303,7 @@ function resetTimer() {
     if (timerSecondsLeft <= 0) {
       clearInterval(timerInterval);
       playSound('wrong');
+      triggerHaptic('heavy');
       currentQuestionIndex++; loadNextQuestion();
     }
   }, 100);
@@ -297,13 +316,21 @@ function selectAnswer(idx, btn) {
   buttons.forEach(b => b.style.pointerEvents = 'none');
 
   if (idx === q.ansIndex) {
-    btn.classList.add('correct'); playSound('correct'); sessionScore++;
+    btn.classList.add('correct'); 
+    playSound('correct'); 
+    triggerHaptic('light'); // اهتزاز خفيف للإجابة الصحيحة
+    sessionScore++;
+    
     // تحديث عداد الإجابات الصحيحة فوراً
     const correctCounter = document.getElementById('correct-counter');
     if(correctCounter) correctCounter.innerText = sessionScore;
   } else {
-    btn.classList.add('wrong'); buttons[q.ansIndex].classList.add('correct'); playSound('wrong');
+    btn.classList.add('wrong'); 
+    buttons[q.ansIndex].classList.add('correct'); 
+    playSound('wrong'); 
+    triggerHaptic('heavy'); // اهتزاز قوي للإجابة الخاطئة
   }
+  
   setTimeout(() => { currentQuestionIndex++; loadNextQuestion(); }, 700);
 }
 
@@ -318,6 +345,7 @@ function finishGame() {
   
   if (sessionScore >= 15 && window.confetti) {
     window.confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+    triggerHaptic('success');
   }
 }
 
@@ -368,6 +396,7 @@ window.openAdModal = () => {
       btnComplete.disabled = false;
       btnComplete.className = "btn-shimmer w-full py-3 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 active:scale-98 transition-all cursor-pointer";
       document.getElementById('lbl-ad-wait').innerText = i18n[currentLang].btnClaimAdNow;
+      triggerHaptic('success');
     }
   }, 100);
 };
