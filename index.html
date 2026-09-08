@@ -92,8 +92,8 @@
           <span id="lbl-invite">دعوة الأصدقاء 🎁</span>
         </button>
         
-        <!-- زر سحب الأرباح -->
-        <button onclick="window.openWithdraw()" class="w-full glass-btn py-3 rounded-xl text-emerald-400 font-bold text-sm flex items-center justify-center gap-2 border border-emerald-500/30 hover:bg-emerald-500/10 transition-all active:scale-95">
+        <!-- زر فتح صفحة السحب -->
+        <button onclick="window.openWithdrawScreen()" class="w-full glass-btn py-3 rounded-xl text-emerald-400 font-bold text-sm flex items-center justify-center gap-2 border border-emerald-500/30 hover:bg-emerald-500/10 transition-all active:scale-95">
           <span id="lbl-withdraw">سحب الأرباح 💳</span>
         </button>
       </div>
@@ -105,7 +105,7 @@
       </button>
     </div>
 
-    <!-- SCREEN 2: INVITE FRIENDS (NEW) -->
+    <!-- SCREEN 2: INVITE FRIENDS -->
     <div id="screen-invite" class="hidden flex flex-col gap-4 my-auto">
       <div class="glass-card rounded-2xl p-6 text-center border border-amber-500/30 relative">
         <div class="w-16 h-16 mx-auto bg-amber-500/20 rounded-full flex items-center justify-center text-3xl mb-3 border border-amber-500/40 shadow-lg shadow-amber-500/20">🎁</div>
@@ -142,7 +142,48 @@
       </div>
     </div>
 
-    <!-- SCREEN 3: QUIZ -->
+    <!-- SCREEN 3: WITHDRAW (NEW) -->
+    <div id="screen-withdraw" class="hidden flex flex-col gap-4 my-auto">
+      <div class="glass-card rounded-2xl p-6 text-center border border-emerald-500/30 relative">
+        <div class="w-16 h-16 mx-auto bg-emerald-500/20 rounded-full flex items-center justify-center text-3xl mb-3 border border-emerald-500/40 shadow-lg shadow-emerald-500/20">💳</div>
+        <h2 class="text-xl font-black text-white mb-2" id="wd-title">سحب الأرباح</h2>
+        <p class="text-xs text-slate-300 mb-5 leading-relaxed" id="wd-desc">تأكد من استيفاء الشروط لسحب أرباحك مباشرة.</p>
+        
+        <!-- شريط تقدم الرصيد -->
+        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 mb-3 text-right">
+          <div class="flex justify-between text-xs font-bold mb-2">
+            <span class="text-slate-300" id="lbl-wd-bal-req">الرصيد المطلوب ($50)</span>
+            <span id="wd-bal-progress" class="text-emerald-400">0%</span>
+          </div>
+          <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+            <div id="wd-bal-bar" class="bg-emerald-400 h-full w-0 transition-all duration-500"></div>
+          </div>
+        </div>
+
+        <!-- شريط تقدم الدعوات -->
+        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 mb-5 text-right">
+          <div class="flex justify-between text-xs font-bold mb-2">
+            <span class="text-slate-300" id="lbl-wd-inv-req">الدعوات المطلوبة (20)</span>
+            <span id="wd-inv-progress" class="text-amber-400">0%</span>
+          </div>
+          <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+            <div id="wd-inv-bar" class="bg-amber-400 h-full w-0 transition-all duration-500"></div>
+          </div>
+        </div>
+
+        <!-- أزرار الإجراءات -->
+        <div class="flex flex-col gap-2.5">
+          <button onclick="window.processWithdrawal()" class="w-full btn-shimmer py-3.5 rounded-xl text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95">
+            <span id="btn-req-withdraw">طلب السحب الآن</span>
+          </button>
+          <button onclick="window.closeWithdrawScreen()" class="w-full glass-btn py-3 rounded-xl text-slate-300 font-bold text-xs hover:text-white active:scale-95">
+            <span id="btn-wd-back">العودة للأقسام</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 4: QUIZ -->
     <div id="screen-quiz" class="hidden flex flex-col">
       <div class="flex justify-between items-center mb-3 text-xs font-bold px-1">
         <button onclick="window.exitQuiz()" class="bg-red-500/20 text-red-400 px-3 py-1.5 rounded-xl border border-red-500/30 flex items-center gap-1 hover:bg-red-500/30 transition-colors active:scale-95">
@@ -171,7 +212,7 @@
       <div id="options-container" class="grid grid-cols-1 gap-2.5"></div>
     </div>
 
-    <!-- SCREEN 4: RESULT -->
+    <!-- SCREEN 5: RESULT -->
     <div id="result-screen" class="hidden glass-card rounded-2xl p-6 text-center border border-slate-700/80 flex flex-col items-center gap-4 my-auto">
       <div class="w-20 h-20 rounded-full bg-emerald-500/10 border-2 border-emerald-500/40 flex items-center justify-center text-4xl">🎉</div>
       <div>
