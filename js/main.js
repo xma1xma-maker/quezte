@@ -218,9 +218,9 @@ async function initApp() {
 }
 
 function updateBalanceUI() {
-  document.getElementById('user-balance').innerText = `🪙 ${totalBalance.toFixed(3)}`;
+  document.getElementById('user-balance').innerText = `💰 ${totalBalance.toFixed(3)}`;
   if(document.getElementById('inv-bal-val')) {
-    document.getElementById('inv-bal-val').innerText = `🪙 ${totalBalance.toFixed(3)}`;
+    document.getElementById('inv-bal-val').innerText = `💰 ${totalBalance.toFixed(3)}`;
   }
 }
 
@@ -319,7 +319,7 @@ function renderCurrentQuestionUI() {
   document.getElementById('question-cat-tag').innerHTML = `${catMeta.icon} ${catMeta.name[currentLang]}`;
   document.getElementById('q-counter').innerText = `${currentQuestionIndex + 1} / ${activeQuizQuestions.length}`;
   
-  document.getElementById('score-counter').innerText = `🪙 ${(sessionScore * REWARD_PER_CORRECT).toFixed(3)}`;
+  document.getElementById('score-counter').innerText = `💰 ${(sessionScore * REWARD_PER_CORRECT).toFixed(3)}`;
   document.getElementById('question-text').innerText = qLang.q;
 
   const flagContainer = document.getElementById('flag-container');
@@ -394,7 +394,7 @@ function finishGame() {
   document.getElementById('screen-quiz').classList.add('hidden');
   document.getElementById('result-screen').classList.remove('hidden');
   document.getElementById('res-correct-count').innerText = `${sessionScore} / 20`;
-  document.getElementById('res-earned-amount').innerText = `🪙 ${(sessionScore * REWARD_PER_CORRECT).toFixed(3)}`;
+  document.getElementById('res-earned-amount').innerText = `💰 ${(sessionScore * REWARD_PER_CORRECT).toFixed(3)}`;
   
   if (sessionScore >= 15 && window.confetti) {
     window.confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
@@ -488,7 +488,7 @@ window.openInviteScreen = () => {
   
   document.getElementById('inv-link-input' ).value = inviteLink;
   document.getElementById('inv-count-val').innerText = referralsCount;
-  document.getElementById('inv-bal-val').innerText = `🪙 ${totalBalance.toFixed(3)}`;
+  document.getElementById('inv-bal-val').innerText = `💰 ${totalBalance.toFixed(3)}`;
 
   document.getElementById('screen-categories').classList.add('hidden');
   document.getElementById('screen-invite').classList.remove('hidden');
@@ -512,8 +512,8 @@ window.copyInviteLink = () => {
 window.shareInviteLink = () => {
   const inviteLink = document.getElementById('inv-link-input').value;
   const text = currentLang === 'ar' 
-    ? `العب واربح الكوينز معي في تحدي الأسئلة! 🪙` 
-    : `Play and earn coins with me! 🪙`;
+    ? `العب واربح الكوينز معي في تحدي الأسئلة! 💰` 
+    : `Play and earn coins with me! 💰`;
 
   const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent(text)}`;
 
