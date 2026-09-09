@@ -430,7 +430,7 @@ window.openAdModal = () => {
   }
 
   // تم التحديث إلى الكود الإعلاني الجديد (Interstitial)
-  const AdController = window.Adsgram.init({ blockId: "int-46905" });
+  const AdController = window.Adsgram.init({ blockId: "int-47004" });
 
   AdController.show().then((result) => {
     triggerHaptic('success');
